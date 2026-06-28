@@ -1,0 +1,518 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CREATOR
+  VIEWER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_EMAIL
+  DELETED
+}
+
+enum Currency {
+  INR
+  USD
+  EUR
+  GBP
+  AUD
+  CAD
+  JPY
+  AED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CHARGEBACK
+  CANCELLED
+}
+
+enum PaymentProvider {
+  STRIPE
+  RAZORPAY
+  PAYPAL
+  PHONEPE
+  UPI
+  MANUAL
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum RefundStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PROCESSED
+  FAILED
+}
+
+enum StreamPlatform {
+  YOUTUBE
+  TWITCH
+  KICK
+  FACEBOOK_GAMING
+  TIKTOK_LIVE
+  DISCORD_STAGE
+  CUSTOM_RTMP
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String?         @unique
+  passwordHash    String?
+  name            String?
+  avatarUrl       String?
+  role            UserRole        @default(VIEWER)
+  status          UserStatus      @default(PENDING_EMAIL)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  creatorProfile  CreatorProfile?
+  viewerProfile   ViewerProfile?
+  sessions        Session[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  apiKeys         APIKey[]
+  adminLogs       AdminLog[]      @relation("AdminActor")
+
+  @@index([role, status])
+}
+
+model CreatorProfile {
+  id                   String                 @id @default(cuid())
+  userId               String                 @unique
+  username             String                 @unique
+  displayName          String
+  bio                  String?
+  avatarUrl            String?
+  bannerUrl            String?
+  publicUrl            String                 @unique
+  defaultCurrency      Currency               @default(USD)
+  countryCode          String?
+  youtubeChannelId     String?
+  youtubeVerifiedAt    DateTime?
+  payoutCountry        String?
+  onboardingCompleted  Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settings             CreatorSettings?
+  overlaySettings      OverlaySettings?
+  themes               Theme[]
+  paymentMethods       PaymentMethod[]
+  paidMessages         PaidMessage[]
+  payments             Payment[]
+  goals                Goal[]
+  supporters           Supporter[]
+  memberships          Membership[]
+  analytics            Analytics[]
+  payouts              Payout[]
+  connectedPlatforms   ConnectedStreamPlatform[]
+  favoriteEntries      FavoriteCreator[]
+
+  @@index([username])
+  @@index([countryCode])
+}
+
+model ViewerProfile {
+  id                 String            @id @default(cuid())
+  userId             String            @unique
+  displayName        String
+  avatarUrl          String?
+  countryCode        String?
+  preferredCurrency  Currency          @default(USD)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settings           ViewerSettings?
+  payments           Payment[]
+  paidMessages       PaidMessage[]
+  paymentMethods     PaymentMethod[]
+  favoriteCreators   FavoriteCreator[]
+  supporterEntries   Supporter[]
+  memberships        Membership[]
+  loyaltyBadges      LoyaltyBadge[]
+  refunds            Refund[]
+
+  @@index([countryCode])
+}
+
+model CreatorSettings {
+  id                   String         @id @default(cuid())
+  creatorId            String         @unique
+  minMessageAmount     Int            @default(100)
+  maxMessageLength     Int            @default(240)
+  aiModerationEnabled  Boolean        @default(true)
+  aiVoiceEnabled       Boolean        @default(false)
+  autoThankYouEnabled  Boolean        @default(true)
+  defaultThemeId       String?
+  payoutThreshold      Int            @default(5000)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  creator              CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model ViewerSettings {
+  id             String        @id @default(cuid())
+  viewerId       String        @unique
+  emailReceipts  Boolean       @default(true)
+  marketingEmail Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  viewer         ViewerProfile @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+}
+
+model PaymentMethod {
+  id                String          @id @default(cuid())
+  creatorId         String?
+  viewerId          String?
+  provider          PaymentProvider
+  label             String
+  externalAccountId String?
+  countryCode       String?
+  currency          Currency?
+  enabled           Boolean         @default(true)
+  metadata          Json            @default("{}")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  creator           CreatorProfile? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  viewer            ViewerProfile?  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([provider, enabled])
+  @@index([creatorId])
+}
+
+model Payment {
+  id                    String          @id @default(cuid())
+  creatorId             String
+  viewerId              String?
+  guestDisplayName      String?
+  provider              PaymentProvider
+  providerPaymentId     String?         @unique
+  idempotencyKey        String          @unique
+  status                PaymentStatus   @default(PENDING)
+  currency              Currency
+  grossAmount           Int
+  platformFee           Int
+  gatewayFee            Int             @default(0)
+  taxAmount             Int             @default(0)
+  netCreatorEarnings    Int
+  countryCode           String?
+  riskScore             Int             @default(0)
+  failureReason         String?
+  metadata              Json            @default("{}")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  succeededAt           DateTime?
+  creator               CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  viewer                ViewerProfile?  @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+  paidMessage           PaidMessage?
+  refunds               Refund[]
+
+  @@index([creatorId, status, createdAt])
+  @@index([viewerId, createdAt])
+  @@index([provider, status])
+}
+
+model PaidMessage {
+  id                  String           @id @default(cuid())
+  creatorId           String
+  viewerId            String?
+  paymentId           String           @unique
+  displayName         String
+  message             String
+  amount              Int
+  currency            Currency
+  color               String           @default("#ff7a1a")
+  moderationStatus    ModerationStatus @default(PENDING)
+  moderationReason    String?
+  aiVoiceRequested    Boolean          @default(false)
+  aiVoiceUrl          String?
+  overlayDeliveredAt  DateTime?
+  createdAt           DateTime         @default(now())
+  creator             CreatorProfile   @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  viewer              ViewerProfile?   @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+  payment             Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, createdAt])
+  @@index([moderationStatus])
+}
+
+model OverlaySettings {
+  id                    String         @id @default(cuid())
+  creatorId             String         @unique
+  browserSourceToken    String         @unique
+  themeId               String?
+  showGoalBar           Boolean        @default(true)
+  showTopSupporter      Boolean        @default(true)
+  showRecentActivity    Boolean        @default(true)
+  animationStyle        String         @default("ember-rise")
+  soundEffectUrl        String?
+  gifAlertUrl           String?
+  videoAlertUrl         String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  creator               CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  theme                 Theme?         @relation(fields: [themeId], references: [id], onDelete: SetNull)
+}
+
+model Theme {
+  id              String            @id @default(cuid())
+  creatorId       String?
+  name            String
+  isSystem        Boolean           @default(false)
+  backgroundColor String            @default("#070707")
+  accentColor     String            @default("#ff7a1a")
+  textColor       String            @default("#ffffff")
+  config          Json              @default("{}")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  creator         CreatorProfile?   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  overlays        OverlaySettings[]
+
+  @@index([creatorId, isSystem])
+}
+
+model Goal {
+  id            String         @id @default(cuid())
+  creatorId     String
+  title         String
+  targetAmount  Int
+  currentAmount Int            @default(0)
+  currency      Currency
+  startsAt      DateTime?
+  endsAt        DateTime?
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  creator       CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, active])
+}
+
+model Supporter {
+  id               String         @id @default(cuid())
+  creatorId        String
+  viewerId         String?
+  displayName      String
+  totalAmount      Int            @default(0)
+  currency         Currency       @default(USD)
+  messageCount     Int            @default(0)
+  lastSupportedAt  DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  creator          CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  viewer           ViewerProfile? @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+
+  @@unique([creatorId, viewerId])
+  @@index([creatorId, totalAmount])
+}
+
+model Membership {
+  id              String          @id @default(cuid())
+  creatorId       String
+  viewerId        String
+  tierName        String
+  monthlyAmount   Int
+  currency        Currency
+  active          Boolean         @default(true)
+  startedAt       DateTime        @default(now())
+  renewsAt        DateTime?
+  cancelledAt     DateTime?
+  creator         CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  viewer          ViewerProfile   @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, viewerId, tierName])
+  @@index([creatorId, active])
+}
+
+model LoyaltyBadge {
+  id          String        @id @default(cuid())
+  viewerId    String
+  name        String
+  level       Int           @default(1)
+  iconUrl     String?
+  earnedAt    DateTime      @default(now())
+  viewer      ViewerProfile @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([viewerId, level])
+}
+
+model Analytics {
+  id              String         @id @default(cuid())
+  creatorId       String
+  day             DateTime
+  grossRevenue    Int            @default(0)
+  platformRevenue Int            @default(0)
+  gatewayFees     Int            @default(0)
+  taxes           Int            @default(0)
+  netRevenue      Int            @default(0)
+  messageCount    Int            @default(0)
+  supporterCount  Int            @default(0)
+  currency        Currency
+  metadata        Json           @default("{}")
+  creator         CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, day, currency])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  readAt    DateTime?
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String
+  metadata  Json     @default("{}")
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([resource, createdAt])
+  @@index([userId, createdAt])
+}
+
+model APIKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String   @unique
+  scopes      String[]
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  target    String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+  admin     User     @relation("AdminActor", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([adminId, createdAt])
+}
+
+model Refund {
+  id          String       @id @default(cuid())
+  paymentId   String
+  viewerId    String?
+  status      RefundStatus @default(REQUESTED)
+  reason      String
+  amount      Int
+  currency    Currency
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  payment     Payment      @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  viewer      ViewerProfile? @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId, status])
+}
+
+model Payout {
+  id                 String         @id @default(cuid())
+  creatorId          String
+  provider           PaymentProvider
+  status             PayoutStatus   @default(PENDING)
+  currency           Currency
+  grossAmount        Int
+  platformFee        Int
+  gatewayFee         Int            @default(0)
+  taxAmount          Int            @default(0)
+  netAmount          Int
+  externalPayoutId   String?
+  failureReason      String?
+  requestedAt        DateTime       @default(now())
+  processedAt        DateTime?
+  creator            CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+
+  @@index([creatorId, status, requestedAt])
+}
+
+model ConnectedStreamPlatform {
+  id                 String         @id @default(cuid())
+  creatorId          String
+  platform           StreamPlatform
+  externalChannelId  String
+  externalChannelUrl String?
+  accessTokenHash    String?
+  refreshTokenHash   String?
+  verifiedAt         DateTime?
+  metadata           Json           @default("{}")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  creator            CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([platform, externalChannelId])
+  @@index([creatorId, platform])
+}
+
+model FavoriteCreator {
+  id        String         @id @default(cuid())
+  viewerId  String
+  creatorId String
+  createdAt DateTime       @default(now())
+  viewer    ViewerProfile  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([viewerId, creatorId])
+}

@@ -24,13 +24,15 @@ type YouTubeChannelsResponse = {
   }>;
 };
 
-function fail(reason: string) {
-  return NextResponse.redirect(new URL(`/creator/verification?auth=${encodeURIComponent(reason)}`, env.NEXT_PUBLIC_APP_URL));
+function fail(reason: string, origin: string) {
+  return NextResponse.redirect(new URL(`/creator/verification?auth=${encodeURIComponent(reason)}`, origin));
 }
 
 export async function GET(request: NextRequest) {
+  const origin = request.nextUrl.origin;
+
   if (!env.YOUTUBE_CLIENT_ID || !env.YOUTUBE_CLIENT_SECRET || !env.AUTH_SECRET) {
-    return fail("missing-youtube-env");
+    return fail("missing-youtube-env", origin);
   }
 
   const code = request.nextUrl.searchParams.get("code");
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
   const storedState = (await cookies()).get("chatboost.oauth_state")?.value;
 
   if (!code || !state || !storedState || state !== storedState) {
-    return fail("invalid-oauth-state");
+    return fail("invalid-oauth-state", origin);
   }
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
@@ -49,13 +51,13 @@ export async function GET(request: NextRequest) {
       client_secret: env.YOUTUBE_CLIENT_SECRET,
       code,
       grant_type: "authorization_code",
-      redirect_uri: `${env.NEXT_PUBLIC_APP_URL}/api/auth/youtube/callback`
+      redirect_uri: `${origin}/api/auth/youtube/callback`
     })
   });
   const tokenPayload = (await tokenResponse.json()) as GoogleTokenResponse;
 
   if (!tokenResponse.ok || !tokenPayload.access_token) {
-    return fail(tokenPayload.error ?? "token-exchange-failed");
+    return fail(tokenPayload.error ?? "token-exchange-failed", origin);
   }
 
   const [userInfoResponse, channelsResponse] = await Promise.all([
@@ -72,7 +74,7 @@ export async function GET(request: NextRequest) {
   const channel = channels.items?.[0];
 
   if (!userInfoResponse.ok || !channelsResponse.ok || !userInfo.email || !channel?.id) {
-    return fail("youtube-channel-not-found");
+    return fail("youtube-channel-not-found", origin);
   }
 
   const creatorSession = creatorSessionFromYouTube({
@@ -84,12 +86,12 @@ export async function GET(request: NextRequest) {
     channelHandle: channel.snippet?.customUrl
   });
   const token = await signCreatorOAuthSession(creatorSession);
-  const response = NextResponse.redirect(new URL("/creator/verification?auth=youtube-connected", env.NEXT_PUBLIC_APP_URL));
+  const response = NextResponse.redirect(new URL("/creator/verification?auth=youtube-connected", origin));
 
   response.cookies.set(creatorOAuthCookie, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: env.NEXT_PUBLIC_APP_URL.startsWith("https://"),
+    secure: origin.startsWith("https://"),
     maxAge: 7 * 24 * 60 * 60,
     path: "/"
   });

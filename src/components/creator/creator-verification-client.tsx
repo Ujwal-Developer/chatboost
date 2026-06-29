@@ -190,7 +190,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </div>
               {initialProfile?.auth === "missing-youtube-env" ? (
                 <p className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 text-sm text-ember">
-                  Missing real-mode env vars: `AUTH_SECRET`, `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, and `NEXT_PUBLIC_APP_URL`.
+                  Real YouTube login is not configured yet. Add `AUTH_SECRET`, `YOUTUBE_CLIENT_ID`, and `YOUTUBE_CLIENT_SECRET` in Vercel, then redeploy.
                 </p>
               ) : null}
             </div>

@@ -238,9 +238,21 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
                 </div>
               ) : null}
               {initialProfile?.auth === "missing-youtube-env" ? (
-                <p className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 text-sm text-ember">
-                  Real YouTube login is not configured yet. Add `AUTH_SECRET`, `YOUTUBE_CLIENT_ID`, and `YOUTUBE_CLIENT_SECRET` in Vercel, then redeploy.
-                </p>
+                <div className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-4 text-sm text-ember">
+                  <p className="font-semibold">Connect YouTube is ready in code, but off in deployment.</p>
+                  <p className="mt-2 leading-6">
+                    Add these Vercel environment variables, redeploy, then this button will open the real Google account consent screen.
+                  </p>
+                  <div className="mt-3 grid gap-2 font-mono text-xs text-white/76 sm:grid-cols-2">
+                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">AUTH_SECRET</span>
+                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">YOUTUBE_CLIENT_ID</span>
+                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">YOUTUBE_CLIENT_SECRET</span>
+                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">Redirect: /api/auth/youtube/callback</span>
+                  </div>
+                  <p className="mt-3 leading-6 text-white/62">
+                    Without those keys, no app can verify YouTube ownership through Google. Use the manual proof code below until real OAuth keys are added.
+                  </p>
+                </div>
               ) : null}
             </div>
 

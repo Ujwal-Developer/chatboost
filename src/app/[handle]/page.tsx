@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { Activity, BadgeCheck, RadioTower, Users } from "lucide-react";
 import { BrandLink } from "@/components/brand/brand-logo";
 import { PaymentPanel } from "@/components/creator/payment-panel";
@@ -6,7 +7,13 @@ import { creatorPaymentPath, displayNameFromHandle, normalizeCreatorHandle } fro
 
 export default async function CreatorPublicPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle: rawHandle } = await params;
-  const handle = normalizeCreatorHandle(decodeURIComponent(rawHandle));
+  const decodedHandle = decodeURIComponent(rawHandle);
+
+  if (!decodedHandle.startsWith("@")) {
+    notFound();
+  }
+
+  const handle = normalizeCreatorHandle(decodedHandle);
   const creatorName = displayNameFromHandle(handle);
   const creatorHandle = creatorPaymentPath(handle);
 

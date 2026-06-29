@@ -27,6 +27,7 @@ export type CreatorProfile = {
 };
 
 const storageKey = "chatboost.creatorProfile";
+const reviewStorageKey = "chatboost.creatorReviewQueue";
 
 export const fallbackCreatorProfile: CreatorProfile = {
   role: "creator",
@@ -95,6 +96,84 @@ export function saveCreatorProfile(
 
   window.localStorage.setItem(storageKey, JSON.stringify(next));
   window.localStorage.setItem("chatboost.session", JSON.stringify(next));
+  return next;
+}
+
+export function submitCreatorForManualReview(profile: CreatorProfile) {
+  if (typeof window === "undefined") return;
+
+  const submittedAt = new Date().toISOString();
+  const queue = readManualReviewQueue().filter((item) => item.handle !== profile.handle);
+
+  window.localStorage.setItem(
+    reviewStorageKey,
+    JSON.stringify([
+      {
+        ...profile,
+        verificationStatus: "in_review" as const,
+        submittedAt
+      },
+      ...queue
+    ])
+  );
+}
+
+export type CreatorReviewRequest = CreatorProfile & {
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+};
+
+export function readManualReviewQueue(): CreatorReviewRequest[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = window.localStorage.getItem(reviewStorageKey);
+    return stored ? (JSON.parse(stored) as CreatorReviewRequest[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function updateManualReviewRequest(handle: string, status: "verified" | "rejected", reviewNote: string) {
+  if (typeof window === "undefined") return fallbackCreatorProfile;
+
+  const reviewedAt = new Date().toISOString();
+  const queue = readManualReviewQueue();
+  const request = queue.find((item) => item.handle === handle);
+  const current = readCreatorProfile();
+  const baseProfile = request ?? current;
+  const next = saveCreatorProfile({
+    ...baseProfile,
+    verificationStatus: status,
+    verificationChecks:
+      status === "verified"
+        ? {
+            email: true,
+            channel: true,
+            proofCode: true,
+            identity: true,
+            payout: true
+          }
+        : baseProfile.verificationChecks
+  });
+
+  window.localStorage.setItem(
+    reviewStorageKey,
+    JSON.stringify(
+      queue.map((item) =>
+        item.handle === handle
+          ? {
+              ...item,
+              verificationStatus: status,
+              reviewedAt,
+              reviewNote
+            }
+          : item
+      )
+    )
+  );
+
   return next;
 }
 

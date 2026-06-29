@@ -5,7 +5,7 @@ import { BadgeCheck, CheckCircle2, ExternalLink, IdCard, LinkIcon, ShieldCheck, 
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorPaymentPath, defaultCreatorHandle, defaultCreatorName, normalizeCreatorHandle } from "@/lib/creator";
-import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreatorProfile, type CreatorProfile } from "@/lib/client/creator-profile";
+import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreatorProfile, submitCreatorForManualReview, type CreatorProfile } from "@/lib/client/creator-profile";
 import {
   creatorPlatforms,
   creatorProofCode,
@@ -61,6 +61,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
   const progress = verificationProgress(profile.verificationChecks);
   const shareUrl = useMemo(() => creatorShareUrl(profile), [profile]);
   const isVerified = profile.verificationStatus === "verified";
+  const isInReview = profile.verificationStatus === "in_review";
 
   useEffect(() => {
     const next = profileFromInitial(initialProfile);
@@ -96,12 +97,12 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               identity: currentProfile.verificationChecks.identity,
               payout: currentProfile.verificationChecks.payout
             },
-            verificationStatus: currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout ? "verified" : "pending",
+            verificationStatus: currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout ? "in_review" : "pending",
             legalName: currentProfile.legalName,
             payoutCountry: currentProfile.payoutCountry
           });
           setProfile(next);
-          setStatusMessage("Real YouTube account connected. Finish identity and payout fields to unlock the payment link.");
+          setStatusMessage("Real YouTube account connected. Finish identity and payout fields, then submit for admin review.");
         }
       } catch {
         if (!cancelled) setAuthMode("demo");
@@ -132,6 +133,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
       payout: payoutCountry.length === 2
     };
 
+    const checksComplete = verificationProgress(verificationChecks) === 5;
     const next = saveCreatorProfile({
       email: String(data.get("email") ?? profile.email),
       displayName: String(data.get("displayName") ?? profile.displayName),
@@ -143,11 +145,19 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
       payoutCountry,
       proofCode: creatorProofCode(handle),
       verificationChecks,
-      verificationStatus: verificationProgress(verificationChecks) === 5 ? "verified" : "pending"
+      verificationStatus: checksComplete ? "in_review" : "pending"
     });
 
+    if (checksComplete) {
+      submitCreatorForManualReview(next);
+    }
+
     setProfile(next);
-    setStatusMessage(next.verificationStatus === "verified" ? "Creator ownership verified. Your payment link is ready." : "Verification saved. Complete every check before sharing your payment link.");
+    setStatusMessage(
+      checksComplete
+        ? "Verification submitted for admin review. The payment link unlocks after approval."
+        : "Verification saved. Complete every check before submitting for admin review."
+    );
   }
 
   return (
@@ -162,11 +172,11 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </p>
               <h2 className="mt-2 text-3xl font-semibold">Verify this is your real channel</h2>
               <p className="mt-3 max-w-2xl leading-7 text-white/62">
-                ChatBoost should only activate payments after channel ownership, identity, and payout readiness are checked.
+                ChatBoost should only activate payments after channel ownership, identity, payout readiness, and admin approval are complete.
               </p>
             </div>
             <span className={`rounded-lg border px-3 py-2 text-sm font-semibold ${isVerified ? "border-mint/35 bg-mint/10 text-mint" : "border-ember/35 bg-ember/10 text-ember"}`}>
-              {isVerified ? "Verified" : `${progress}/5 checks`}
+              {isVerified ? "Verified" : isInReview ? "In admin review" : `${progress}/5 checks`}
             </span>
           </div>
 
@@ -259,7 +269,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="submit">
                 <BadgeCheck size={17} />
-                Submit verification
+                Submit for admin review
               </Button>
               <ButtonLink href="/dashboard/creator" variant="secondary">
                 Go to dashboard
@@ -273,7 +283,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? "Verified by URL and public proof code" : "Needs a valid channel URL and public proof code"],
             [IdCard, "Identity", profile.verificationChecks.identity ? "Legal creator name captured" : "Needed before payouts"],
             [WalletCards, "Payout readiness", profile.verificationChecks.payout ? "Country captured for provider routing" : "Needed for tax and payout checks"],
-            [CheckCircle2, "Payment link", isVerified ? shareUrl : "Locked until all checks pass"]
+            [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for admin approval" : "Locked until all checks pass and admin approves"]
           ].map(([Icon, title, body]) => {
             const TypedIcon = Icon as typeof ShieldCheck;
             return (

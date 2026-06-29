@@ -4,7 +4,7 @@ export const creatorPlatforms = ["youtube", "twitch", "kick", "instagram", "tikt
 
 export type CreatorPlatform = (typeof creatorPlatforms)[number];
 
-export type CreatorVerificationStatus = "not_started" | "pending" | "verified";
+export type CreatorVerificationStatus = "not_started" | "pending" | "in_review" | "rejected" | "verified";
 
 export type CreatorVerificationChecks = {
   email: boolean;

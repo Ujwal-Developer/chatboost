@@ -19,6 +19,7 @@ export default function AdminPage() {
           <div className="mt-5 grid gap-3">
             {[
               [AlertTriangle, "Fraud review", "42 high-risk payments need manual review", "High"],
+              [ShieldCheck, "Creator verification", "Creator ownership proofs waiting for admin approval", "High"],
               [Banknote, "Payout approval", "318 creator payouts waiting for release", "Medium"],
               [UsersRound, "User management", "19 suspended account appeals", "Medium"],
               [BadgeDollarSign, "Refund queue", "73 refund requests across 11 currencies", "Normal"]
@@ -45,6 +46,7 @@ export default function AdminPage() {
           <h2 className="mt-5 text-2xl font-semibold">Platform controls</h2>
           <div className="mt-5 grid gap-3">
             {[
+              ["Creator verification", "/admin/creator-verification"],
               ["Provider health", "/admin/provider-health"],
               ["Webhook failures", "/admin/webhook-failures"],
               ["Audit logs", "/admin/audit-logs"],

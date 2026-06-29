@@ -3,8 +3,8 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Chrome, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Mail, Youtube } from "lucide-react";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
 import { saveCreatorProfile } from "@/lib/client/creator-profile";
 import { creatorPlatforms, platformLabels } from "@/lib/creator-verification";
@@ -136,10 +136,10 @@ export function AuthPage() {
             <ArrowRight size={17} />
           </Button>
 
-          <Button className="mt-3 w-full" type="button" variant="secondary" onClick={() => completeLogin()}>
-            <Chrome size={17} />
-            Continue with Google
-          </Button>
+          <ButtonLink className="mt-3 w-full" href="/api/auth/youtube/start" variant="secondary">
+            <Youtube size={17} />
+            Connect real YouTube account
+          </ButtonLink>
 
           <p className="mt-5 text-sm leading-6 text-white/45">
             The next screen verifies that you control the channel before ChatBoost marks your payment link as ready.

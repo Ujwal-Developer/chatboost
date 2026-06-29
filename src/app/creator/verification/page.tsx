@@ -3,7 +3,7 @@ import { CreatorVerificationClient } from "@/components/creator/creator-verifica
 export default async function CreatorVerificationPage({
   searchParams
 }: {
-  searchParams?: Promise<{ displayName?: string; handle?: string; email?: string; platform?: string; channelUrl?: string }>;
+  searchParams?: Promise<{ displayName?: string; handle?: string; email?: string; platform?: string; channelUrl?: string; auth?: string }>;
 }) {
   const params = await searchParams;
 

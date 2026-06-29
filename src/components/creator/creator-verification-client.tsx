@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, CheckCircle2, ExternalLink, IdCard, LinkIcon, ShieldCheck, WalletCards } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, IdCard, LinkIcon, ShieldCheck, WalletCards, Youtube } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorPaymentPath, defaultCreatorHandle, defaultCreatorName, normalizeCreatorHandle } from "@/lib/creator";
@@ -9,6 +9,7 @@ import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreato
 import {
   creatorPlatforms,
   creatorProofCode,
+  emptyVerificationChecks,
   isLikelyChannelUrl,
   platformLabels,
   verificationProgress
@@ -20,6 +21,22 @@ type InitialVerificationProfile = {
   handle?: string;
   platform?: string;
   channelUrl?: string;
+  auth?: string;
+};
+
+type CreatorOAuthSessionResponse = {
+  mode: "real" | "demo";
+  authenticated: boolean;
+  session: null | {
+    email: string;
+    name: string;
+    channelTitle: string;
+    channelHandle: string;
+    channelUrl: string;
+    handle: string;
+    proofCode: string;
+    verifiedAt: string;
+  };
 };
 
 function profileFromInitial(initialProfile?: InitialVerificationProfile): CreatorProfile {
@@ -40,6 +57,7 @@ function profileFromInitial(initialProfile?: InitialVerificationProfile): Creato
 export function CreatorVerificationClient({ initialProfile }: { initialProfile?: InitialVerificationProfile }) {
   const [profile, setProfile] = useState<CreatorProfile>(fallbackCreatorProfile);
   const [statusMessage, setStatusMessage] = useState("");
+  const [authMode, setAuthMode] = useState<"checking" | "real" | "demo">("checking");
   const progress = verificationProgress(profile.verificationChecks);
   const shareUrl = useMemo(() => creatorShareUrl(profile), [profile]);
   const isVerified = profile.verificationStatus === "verified";
@@ -48,6 +66,54 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     const next = profileFromInitial(initialProfile);
     setProfile(saveCreatorProfile(next));
   }, [initialProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOAuthSession() {
+      try {
+        const response = await fetch("/api/auth/creator/session");
+        const payload = (await response.json()) as CreatorOAuthSessionResponse;
+        if (cancelled) return;
+
+        setAuthMode(payload.mode);
+
+        if (payload.authenticated && payload.session) {
+          const currentProfile = readCreatorProfile();
+          const next = saveCreatorProfile({
+            email: payload.session.email,
+            displayName: payload.session.channelTitle || payload.session.name,
+            handle: payload.session.handle,
+            platform: "youtube",
+            channelUrl: payload.session.channelUrl,
+            channelHandle: payload.session.channelHandle,
+            proofCode: payload.session.proofCode,
+            verificationChecks: {
+              ...emptyVerificationChecks,
+              email: true,
+              channel: true,
+              proofCode: true,
+              identity: currentProfile.verificationChecks.identity,
+              payout: currentProfile.verificationChecks.payout
+            },
+            verificationStatus: currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout ? "verified" : "pending",
+            legalName: currentProfile.legalName,
+            payoutCountry: currentProfile.payoutCountry
+          });
+          setProfile(next);
+          setStatusMessage("Real YouTube account connected. Finish identity and payout fields to unlock the payment link.");
+        }
+      } catch {
+        if (!cancelled) setAuthMode("demo");
+      }
+    }
+
+    loadOAuthSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,6 +171,30 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
           </div>
 
           <form className="mt-6 grid gap-4" onSubmit={handleSubmit} data-testid="creator-verification-form">
+            <div className="rounded-lg border border-line bg-black/25 p-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div>
+                  <p className="text-sm font-semibold text-white">Real account connection</p>
+                  <p className="mt-1 text-sm leading-6 text-white/58">
+                    {authMode === "real"
+                      ? "YouTube OAuth is configured. Connect the creator account to verify the real channel."
+                      : authMode === "demo"
+                        ? "YouTube OAuth is not fully configured yet. Add the Vercel environment variables below to test with a real account."
+                        : "Checking real authentication configuration..."}
+                  </p>
+                </div>
+                <ButtonLink href="/api/auth/youtube/start" variant={authMode === "real" ? "primary" : "secondary"}>
+                  <Youtube size={17} />
+                  Connect YouTube
+                </ButtonLink>
+              </div>
+              {initialProfile?.auth === "missing-youtube-env" ? (
+                <p className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 text-sm text-ember">
+                  Missing real-mode env vars: `AUTH_SECRET`, `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, and `NEXT_PUBLIC_APP_URL`.
+                </p>
+              ) : null}
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm text-white/62" htmlFor="displayName">
                 Creator name

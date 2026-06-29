@@ -30,6 +30,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
   const isInReview = creatorProfile.verificationStatus === "in_review";
   const isRejected = creatorProfile.verificationStatus === "rejected";
   const verificationLabel = isVerified ? "Verified" : isInReview ? "In admin review" : isRejected ? "Rejected" : "Verification needed";
+  const connectedAccount = creatorProfile.connectedAccounts.find((account) => account.provider === creatorProfile.platform) ?? creatorProfile.connectedAccounts[0];
   const todayRevenue = sumBoosts(boosts);
   const stats = [
     { label: "Live revenue", value: formatMoney(todayRevenue), delta: `${boosts.length} boosts` },
@@ -67,6 +68,12 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
               </span>
             </div>
             <p className="mt-1 text-sm text-white/45">@{creatorProfile.handle} / {creatorProfile.email}</p>
+            {connectedAccount ? (
+              <p className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-lg border border-mint/25 bg-mint/10 px-3 py-2 text-sm text-mint">
+                <ShieldCheck size={15} />
+                Connected {connectedAccount.provider}: {connectedAccount.displayName} ({connectedAccount.handle})
+              </p>
+            ) : null}
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
               {isVerified
                 ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."

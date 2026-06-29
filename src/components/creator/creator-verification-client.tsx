@@ -28,8 +28,11 @@ type CreatorOAuthSessionResponse = {
   mode: "real" | "demo";
   authenticated: boolean;
   session: null | {
+    provider: "youtube";
     email: string;
     name: string;
+    avatarUrl?: string;
+    channelId: string;
     channelTitle: string;
     channelHandle: string;
     channelUrl: string;
@@ -62,6 +65,8 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
   const shareUrl = useMemo(() => creatorShareUrl(profile), [profile]);
   const isVerified = profile.verificationStatus === "verified";
   const isInReview = profile.verificationStatus === "in_review";
+  const connectedAccount = profile.connectedAccounts.find((account) => account.provider === profile.platform) ?? profile.connectedAccounts[0];
+  const hasOAuthConnection = connectedAccount?.verificationSource === "oauth";
 
   useEffect(() => {
     const next = profileFromInitial(initialProfile);
@@ -81,6 +86,25 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
         if (payload.authenticated && payload.session) {
           const currentProfile = readCreatorProfile();
+          const connectedAccounts = [
+            {
+              provider: "youtube" as const,
+              providerAccountId: payload.session.channelId,
+              displayName: payload.session.channelTitle || payload.session.name,
+              handle: payload.session.channelHandle,
+              url: payload.session.channelUrl,
+              avatarUrl: payload.session.avatarUrl,
+              verificationSource: "oauth" as const,
+              connectedAt: payload.session.verifiedAt
+            },
+            ...currentProfile.connectedAccounts.filter((account) => !(account.provider === "youtube" && account.verificationSource === "oauth"))
+          ];
+          const nextVerificationStatus =
+            currentProfile.verificationStatus === "verified"
+              ? "verified"
+              : currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout
+                ? "in_review"
+                : "pending";
           const next = saveCreatorProfile({
             email: payload.session.email,
             displayName: payload.session.channelTitle || payload.session.name,
@@ -97,12 +121,13 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               identity: currentProfile.verificationChecks.identity,
               payout: currentProfile.verificationChecks.payout
             },
-            verificationStatus: currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout ? "in_review" : "pending",
+            verificationStatus: nextVerificationStatus,
             legalName: currentProfile.legalName,
-            payoutCountry: currentProfile.payoutCountry
+            payoutCountry: currentProfile.payoutCountry,
+            connectedAccounts
           });
           setProfile(next);
-          setStatusMessage("Real YouTube account connected. Finish identity and payout fields, then submit for admin review.");
+          setStatusMessage("Real YouTube channel connected. ChatBoost now knows which channel this creator owns.");
         }
       } catch {
         if (!cancelled) setAuthMode("demo");
@@ -123,11 +148,12 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     const channelUrl = String(data.get("channelUrl") ?? "").trim();
     const legalName = String(data.get("legalName") ?? "").trim();
     const payoutCountry = String(data.get("payoutCountry") ?? "").trim().toUpperCase();
-    const proofConfirmed = data.get("proofConfirmed") === "on";
+    const proofConfirmed = hasOAuthConnection || data.get("proofConfirmed") === "on";
+    const channelOwned = hasOAuthConnection || isLikelyChannelUrl(channelUrl);
 
     const verificationChecks = {
       email: String(data.get("email") ?? "").includes("@"),
-      channel: isLikelyChannelUrl(channelUrl),
+      channel: channelOwned,
       proofCode: proofConfirmed,
       identity: legalName.length >= 2,
       payout: payoutCountry.length === 2
@@ -145,7 +171,8 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
       payoutCountry,
       proofCode: creatorProofCode(handle),
       verificationChecks,
-      verificationStatus: checksComplete ? "in_review" : "pending"
+      verificationStatus: checksComplete ? "in_review" : "pending",
+      connectedAccounts: profile.connectedAccounts
     });
 
     if (checksComplete) {
@@ -180,24 +207,36 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             </span>
           </div>
 
-          <form className="mt-6 grid gap-4" onSubmit={handleSubmit} data-testid="creator-verification-form">
+          <form
+            key={`${profile.email}-${profile.handle}-${profile.channelUrl}-${profile.connectedAccounts.length}`}
+            className="mt-6 grid gap-4"
+            onSubmit={handleSubmit}
+            data-testid="creator-verification-form"
+          >
             <div className="rounded-lg border border-line bg-black/25 p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                   <p className="text-sm font-semibold text-white">Real account connection</p>
                   <p className="mt-1 text-sm leading-6 text-white/58">
-                    {authMode === "real"
-                      ? "YouTube OAuth is configured. Connect the creator account to verify the real channel."
-                      : authMode === "demo"
-                        ? "YouTube OAuth is not fully configured yet. Add the Vercel environment variables below to test with a real account."
-                        : "Checking real authentication configuration..."}
+                    {hasOAuthConnection
+                      ? "Connected by Google OAuth. This replaces manual channel proof for ownership."
+                      : authMode === "real"
+                        ? "Connect the creator's real YouTube account. ChatBoost will read the channel owned by that Google account."
+                        : authMode === "demo"
+                          ? "YouTube OAuth is not fully configured yet. Add the Vercel environment variables below to test with a real account."
+                          : "Checking real authentication configuration..."}
                   </p>
                 </div>
                 <ButtonLink href="/api/auth/youtube/start" variant={authMode === "real" ? "primary" : "secondary"}>
                   <Youtube size={17} />
-                  Connect YouTube
+                  {hasOAuthConnection ? "Reconnect YouTube" : "Connect YouTube"}
                 </ButtonLink>
               </div>
+              {hasOAuthConnection ? (
+                <div className="mt-3 rounded-lg border border-mint/25 bg-mint/10 p-3 text-sm leading-6 text-mint">
+                  Connected as {connectedAccount.displayName} ({connectedAccount.handle}). Platform account ID is saved for creator ownership checks.
+                </div>
+              ) : null}
               {initialProfile?.auth === "missing-youtube-env" ? (
                 <p className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 text-sm text-ember">
                   Real YouTube login is not configured yet. Add `AUTH_SECRET`, `YOUTUBE_CLIENT_ID`, and `YOUTUBE_CLIENT_SECRET` in Vercel, then redeploy.
@@ -245,11 +284,15 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
             <div className="rounded-lg border border-line bg-black/25 p-4">
               <p className="text-sm font-semibold text-white">Ownership proof code</p>
-              <p className="mt-2 text-sm leading-6 text-white/58">Add this code to the channel bio, about section, pinned post, or website page, then confirm it below.</p>
+              <p className="mt-2 text-sm leading-6 text-white/58">
+                {hasOAuthConnection
+                  ? "Already satisfied by the connected YouTube account. Manual proof is only needed when OAuth is unavailable."
+                  : "Add this code to the channel bio, about section, pinned post, or website page, then confirm it below."}
+              </p>
               <div className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 font-mono text-sm text-ember">{creatorProofCode(profile.handle)}</div>
               <label className="mt-4 flex items-start gap-3 text-sm leading-6 text-white/68">
-                <input name="proofConfirmed" type="checkbox" defaultChecked={profile.verificationChecks.proofCode} className="mt-1 size-4 accent-[#ff7a1a]" />
-                I added the proof code to my public channel/profile so ChatBoost can confirm ownership.
+                <input name="proofConfirmed" type="checkbox" defaultChecked={hasOAuthConnection || profile.verificationChecks.proofCode} disabled={hasOAuthConnection} className="mt-1 size-4 accent-[#ff7a1a]" />
+                {hasOAuthConnection ? "Ownership confirmed by OAuth connection." : "I added the proof code to my public channel/profile so ChatBoost can confirm ownership."}
               </label>
             </div>
 
@@ -280,7 +323,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
         <aside className="space-y-4">
           {[
-            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? "Verified by URL and public proof code" : "Needs a valid channel URL and public proof code"],
+            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? (hasOAuthConnection ? "Verified by connected platform account" : "Verified by URL and public proof code") : "Connect a platform account or add a public proof code"],
             [IdCard, "Identity", profile.verificationChecks.identity ? "Legal creator name captured" : "Needed before payouts"],
             [WalletCards, "Payout readiness", profile.verificationChecks.payout ? "Country captured for provider routing" : "Needed for tax and payout checks"],
             [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for admin approval" : "Locked until all checks pass and admin approves"]

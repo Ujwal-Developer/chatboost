@@ -42,6 +42,17 @@ https://chatboost.rynovax.com/api/auth/youtube/callback
 
 Then open `/creator/verification` and click **Connect YouTube**. ChatBoost will send the creator through Google OAuth, read the authenticated YouTube channel, and mark channel ownership as verified. Identity and payout checks still need production KYC/payout providers before real money launch.
 
+The authentication model matches Nightbot-style platform verification:
+
+1. The creator signs into the platform provider, such as YouTube.
+2. The provider redirects back to ChatBoost with an OAuth code.
+3. ChatBoost exchanges the code for an access token.
+4. ChatBoost calls the provider API, currently YouTube `channels.list?mine=true`.
+5. ChatBoost stores the returned platform account ID, channel title, handle, and URL as the creator's connected account.
+6. Payments stay locked until identity, payout readiness, and admin review are also complete.
+
+Manual proof codes remain available as a fallback when a provider OAuth integration is not configured yet.
+
 ## Important Directories
 
 - `src/app`: routes and API handlers.

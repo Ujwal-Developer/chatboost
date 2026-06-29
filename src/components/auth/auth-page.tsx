@@ -54,9 +54,20 @@ export function AuthPage() {
           <p className="mt-12 text-sm font-medium uppercase tracking-[0.18em] text-ember">Secure access</p>
           <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-normal md:text-6xl">{creatorCopy.title}</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/64">{creatorCopy.body}</p>
+          <ButtonLink className="mt-8 inline-flex" href="/api/auth/youtube/start">
+            <Youtube size={17} />
+            Continue with YouTube
+          </ButtonLink>
         </section>
 
         <form className="surface rounded-lg p-6" action="/creator/verification" method="get" onSubmit={handleSubmit} data-testid="creator-login-form">
+          <div className="mb-5 rounded-lg border border-line bg-black/25 p-4">
+            <p className="text-sm font-semibold text-white">Nightbot-style verification</p>
+            <p className="mt-2 text-sm leading-6 text-white/58">
+              The best path is connecting YouTube first. ChatBoost stores the returned channel ID and uses it as ownership proof.
+            </p>
+          </div>
+
           <label className="block text-sm text-white/62" htmlFor="displayName">
             Creator name
           </label>

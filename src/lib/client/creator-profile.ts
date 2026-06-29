@@ -23,7 +23,19 @@ export type CreatorProfile = {
   payoutCountry: string;
   verificationStatus: CreatorVerificationStatus;
   verificationChecks: CreatorVerificationChecks;
+  connectedAccounts: ConnectedPlatformAccount[];
   signedInAt: string;
+};
+
+export type ConnectedPlatformAccount = {
+  provider: CreatorPlatform;
+  providerAccountId?: string;
+  displayName: string;
+  handle: string;
+  url: string;
+  avatarUrl?: string;
+  verificationSource: "oauth" | "manual";
+  connectedAt: string;
 };
 
 const storageKey = "chatboost.creatorProfile";
@@ -42,6 +54,7 @@ export const fallbackCreatorProfile: CreatorProfile = {
   payoutCountry: "US",
   verificationStatus: "not_started",
   verificationChecks: emptyVerificationChecks,
+  connectedAccounts: [],
   signedInAt: new Date(0).toISOString()
 };
 
@@ -63,7 +76,13 @@ export function readCreatorProfile() {
       verificationChecks: {
         ...emptyVerificationChecks,
         ...parsed.verificationChecks
-      }
+      },
+      connectedAccounts: Array.isArray(parsed.connectedAccounts)
+        ? parsed.connectedAccounts.map((account) => ({
+            ...account,
+            provider: normalizePlatform(account.provider)
+          }))
+        : []
     };
   } catch {
     return fallbackCreatorProfile;
@@ -71,7 +90,13 @@ export function readCreatorProfile() {
 }
 
 export function saveCreatorProfile(
-  profile: Partial<Omit<CreatorProfile, "role" | "signedInAt" | "platform">> & { email: string; displayName: string; handle: string; platform?: string }
+  profile: Partial<Omit<CreatorProfile, "role" | "signedInAt" | "platform" | "connectedAccounts">> & {
+    email: string;
+    displayName: string;
+    handle: string;
+    platform?: string;
+    connectedAccounts?: ConnectedPlatformAccount[];
+  }
 ) {
   if (typeof window === "undefined") return fallbackCreatorProfile;
 
@@ -91,6 +116,7 @@ export function saveCreatorProfile(
     payoutCountry: profile.payoutCountry?.trim().toUpperCase() ?? current.payoutCountry,
     verificationStatus: profile.verificationStatus ?? current.verificationStatus,
     verificationChecks: profile.verificationChecks ?? current.verificationChecks,
+    connectedAccounts: profile.connectedAccounts ?? current.connectedAccounts,
     signedInAt: new Date().toISOString()
   };
 

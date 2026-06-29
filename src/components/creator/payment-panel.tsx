@@ -14,13 +14,36 @@ const providers = [
   { value: "paypal", label: "PayPal" }
 ];
 
-export function PaymentPanel() {
+type PaymentPanelProps = {
+  creatorId?: string;
+  creatorName?: string;
+  creatorHandle?: string;
+};
+
+export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova Plays", creatorHandle = "@nova" }: PaymentPanelProps) {
   const [amount, setAmount] = useState(1000);
   const [provider, setProvider] = useState("stripe");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastBoost, setLastBoost] = useState<LiveBoost | null>(null);
-  const fees = useMemo(() => calculateFeeBreakdown({ grossAmount: amount, gatewayFeeBps: 290, fixedGatewayFee: 30 }), [amount]);
+  const currency = provider === "razorpay" ? "INR" : "USD";
+  const amountMajor = amount / 100;
+  const fees = useMemo(
+    () =>
+      calculateFeeBreakdown({
+        grossAmount: amount,
+        gatewayFeeBps: provider === "razorpay" ? 200 : provider === "paypal" ? 340 : 290,
+        fixedGatewayFee: provider === "stripe" ? 30 : 0
+      }),
+    [amount, provider]
+  );
+
+  function updateAmountFromMajor(value: string) {
+    const next = Math.round(Number(value) * 100);
+    if (Number.isFinite(next)) {
+      setAmount(Math.min(Math.max(next, 100), 500_000));
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,11 +59,11 @@ export function PaymentPanel() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          creatorId: "demo-creator",
+          creatorId,
           displayName,
           message,
           amount,
-          currency: provider === "razorpay" ? "INR" : "USD",
+          currency,
           countryCode: provider === "razorpay" ? "IN" : "US",
           provider
         })
@@ -53,11 +76,11 @@ export function PaymentPanel() {
       }
 
       const boost = boostFromPaymentResponse({
-        creatorId: "demo-creator",
+        creatorId,
         displayName,
         message,
         amount,
-        currency: provider === "razorpay" ? "INR" : "USD",
+        currency,
         provider,
         paymentId: payload.payment.id,
         moderationStatus: payload.payment.moderation.status
@@ -76,8 +99,8 @@ export function PaymentPanel() {
     <form className="surface rounded-lg p-5" onSubmit={handleSubmit} data-testid="payment-form">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-ember">Send a Boost</p>
-          <h2 className="mt-1 text-2xl font-semibold">Highlight your message live</h2>
+          <p className="text-sm font-medium text-ember">Pay {creatorHandle}</p>
+          <h2 className="mt-1 text-2xl font-semibold">Send a boost to {creatorName}</h2>
         </div>
         <Sparkles className="text-ember" size={24} />
       </div>
@@ -92,6 +115,24 @@ export function PaymentPanel() {
       </label>
       <textarea id="message" name="message" required maxLength={240} className="mt-2 min-h-28 w-full resize-none rounded-lg border border-line bg-black/35 p-3 text-white outline-none focus-visible:focus-ring" defaultValue="This stream deserves a boost. Keep going!" />
 
+      <label className="mt-4 block text-sm text-white/68" htmlFor="amount">
+        Amount
+      </label>
+      <div className="mt-2 flex overflow-hidden rounded-lg border border-line bg-black/35 focus-within:focus-ring">
+        <span className="grid h-12 place-items-center border-r border-line px-3 text-white/42">{currency}</span>
+        <input
+          id="amount"
+          name="amount"
+          type="number"
+          min="1"
+          max="5000"
+          step="1"
+          value={amountMajor}
+          onChange={(event) => updateAmountFromMajor(event.target.value)}
+          className="h-12 min-w-0 flex-1 bg-transparent px-3 text-white outline-none"
+        />
+      </div>
+
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {amounts.map((item) => (
           <button
@@ -102,7 +143,7 @@ export function PaymentPanel() {
               amount === item ? "border-ember bg-ember text-black" : "border-line bg-white/6 text-white hover:bg-white/10"
             }`}
           >
-            {formatMoney(item)}
+            {formatMoney(item, currency)}
           </button>
         ))}
       </div>
@@ -126,11 +167,11 @@ export function PaymentPanel() {
       <div className="mt-5 rounded-lg border border-line bg-black/25 p-4 text-sm text-white/68">
         <div className="flex justify-between">
           <span>Creator receives</span>
-          <strong className="text-white">{formatMoney(fees.netCreatorEarnings)}</strong>
+          <strong className="text-white">{formatMoney(fees.netCreatorEarnings, currency)}</strong>
         </div>
         <div className="mt-2 flex justify-between">
           <span>ChatBoost platform fee</span>
-          <span>{formatMoney(fees.platformFee)}</span>
+          <span>{formatMoney(fees.platformFee, currency)}</span>
         </div>
       </div>
 
@@ -154,7 +195,7 @@ export function PaymentPanel() {
         {status === "submitting" ? "Processing payment" : "Pay and send instantly"}
       </Button>
       <p className="mt-3 text-center text-xs text-white/45">
-        Guest checkout is supported. Create an account after payment to save history and earn badges.
+        Viewers do not need an account. This shared creator link sends the payment and message straight to the stream.
       </p>
     </form>
   );

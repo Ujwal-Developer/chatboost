@@ -119,12 +119,9 @@ export default function LandingPage() {
               </ButtonLink>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/52">
-              <span>Login:</span>
+              <span>Creators:</span>
               <Link className="font-medium text-white hover:text-white/72" href="/login/creator">
-                Creator
-              </Link>
-              <Link className="font-medium text-white hover:text-white/72" href="/login/viewer">
-                Viewer
+                create account and get your share link
               </Link>
             </div>
             <div className="mt-8 grid gap-3 text-sm text-white/62 sm:grid-cols-3">
@@ -158,7 +155,7 @@ export default function LandingPage() {
       <Section eyebrow="Flow" title="One successful payment becomes one canonical realtime event.">
         <div className="grid gap-4 lg:grid-cols-3">
           {[
-            ["Viewer pays", "Guest or registered viewer enters name, message, amount, and the best local payment method."],
+            ["Viewer pays", "Viewer opens the creator share link and enters name, message, amount, and the best local payment method."],
             ["Webhook settles", "Provider webhook is verified, deduped, fee-calculated, moderated, and persisted."],
             ["Room updates", "Overlay, dashboard, analytics, activity, goal bars, and leaderboards update from the same event."]
           ].map(([title, body]) => (

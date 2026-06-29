@@ -24,10 +24,7 @@ export function SiteNav() {
             Admin
           </Link>
           <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/login/creator">
-            Creator login
-          </Link>
-          <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/login/viewer">
-            Viewer login
+            Creator account
           </Link>
         </div>
         <ButtonLink href="/@nova" className="h-10">

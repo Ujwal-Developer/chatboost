@@ -5,46 +5,34 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Chrome, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
+import { saveCreatorProfile } from "@/lib/client/creator-profile";
 
-type AuthRole = "creator" | "viewer";
-
-const roleCopy = {
-  creator: {
-    title: "Creator login",
-    body: "Access revenue, overlay settings, payout accounting, moderation, and analytics.",
-    destination: "/dashboard/creator",
-    email: "creator@chatboost.local"
-  },
-  viewer: {
-    title: "Viewer login",
-    body: "Track boosts, receipts, favorite creators, memberships, badges, and refund requests.",
-    destination: "/dashboard/viewer",
-    email: "viewer@chatboost.local"
-  }
+const creatorCopy = {
+  title: "Create your creator account",
+  body: "Set your creator name and handle. ChatBoost gives you one public payment link viewers can use without logging in.",
+  destination: "/dashboard/creator",
+  email: "creator@chatboost.local"
 };
 
-export function AuthPage({ role }: { role: AuthRole }) {
+export function AuthPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "saving">("idle");
-  const copy = roleCopy[role];
 
-  function completeLogin(email: string) {
-    window.localStorage.setItem(
-      "chatboost.session",
-      JSON.stringify({
-        role,
-        email,
-        signedInAt: new Date().toISOString()
-      })
-    );
-    router.push(copy.destination);
+  function completeLogin(profile = { email: creatorCopy.email, displayName: defaultCreatorName, handle: defaultCreatorHandle }) {
+    saveCreatorProfile(profile);
+    router.push(creatorCopy.destination);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("saving");
     const data = new FormData(event.currentTarget);
-    completeLogin(String(data.get("email") ?? copy.email));
+    completeLogin({
+      email: String(data.get("email") ?? creatorCopy.email),
+      displayName: String(data.get("displayName") ?? defaultCreatorName),
+      handle: String(data.get("handle") ?? defaultCreatorHandle)
+    });
   }
 
   return (
@@ -56,12 +44,42 @@ export function AuthPage({ role }: { role: AuthRole }) {
             ChatBoost
           </Link>
           <p className="mt-12 text-sm font-medium uppercase tracking-[0.18em] text-ember">Secure access</p>
-          <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-normal md:text-6xl">{copy.title}</h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-white/64">{copy.body}</p>
+          <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-normal md:text-6xl">{creatorCopy.title}</h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/64">{creatorCopy.body}</p>
         </section>
 
-        <form className="surface rounded-lg p-6" onSubmit={handleSubmit} data-testid={`${role}-login-form`}>
-          <label className="block text-sm text-white/62" htmlFor="email">
+        <form className="surface rounded-lg p-6" action="/dashboard/creator" method="get" onSubmit={handleSubmit} data-testid="creator-login-form">
+          <label className="block text-sm text-white/62" htmlFor="displayName">
+            Creator name
+          </label>
+          <input
+            id="displayName"
+            name="displayName"
+            required
+            minLength={2}
+            maxLength={40}
+            defaultValue={defaultCreatorName}
+            className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
+          />
+
+          <label className="mt-4 block text-sm text-white/62" htmlFor="handle">
+            Share link handle
+          </label>
+          <div className="mt-2 flex overflow-hidden rounded-lg border border-line bg-black/35 focus-within:focus-ring">
+            <span className="grid h-12 place-items-center border-r border-line px-3 text-white/42">@</span>
+            <input
+              id="handle"
+              name="handle"
+              required
+              minLength={2}
+              maxLength={30}
+              pattern="[A-Za-z0-9-]+"
+              defaultValue={defaultCreatorHandle}
+              className="h-12 min-w-0 flex-1 bg-transparent px-3 text-white outline-none"
+            />
+          </div>
+
+          <label className="mt-4 block text-sm text-white/62" htmlFor="email">
             Email
           </label>
           <input
@@ -69,35 +87,23 @@ export function AuthPage({ role }: { role: AuthRole }) {
             name="email"
             type="email"
             required
-            defaultValue={copy.email}
-            className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
-          />
-
-          <label className="mt-4 block text-sm text-white/62" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            defaultValue="chatboost-demo"
+            defaultValue={creatorCopy.email}
             className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
           />
 
           <Button className="mt-6 w-full" type="submit" disabled={status === "saving"}>
             <Mail size={17} />
-            {status === "saving" ? "Signing in" : "Sign in"}
+            {status === "saving" ? "Creating account" : "Create account"}
             <ArrowRight size={17} />
           </Button>
 
-          <Button className="mt-3 w-full" type="button" variant="secondary" onClick={() => completeLogin(copy.email)}>
+          <Button className="mt-3 w-full" type="button" variant="secondary" onClick={() => completeLogin()}>
             <Chrome size={17} />
             Continue with Google
           </Button>
 
           <p className="mt-5 text-sm leading-6 text-white/45">
-            Demo auth stores a local session in this browser and routes to the correct dashboard. Production can swap this for Clerk or Auth.js without changing the routes.
+            Demo auth stores this creator profile in your browser. The next screen shows the payment link to share with viewers.
           </p>
         </form>
       </div>

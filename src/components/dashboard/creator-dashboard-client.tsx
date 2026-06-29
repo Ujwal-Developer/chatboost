@@ -1,15 +1,28 @@
 "use client";
 
-import { Download, RadioTower, RotateCcw, WandSparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Copy, Download, ExternalLink, RadioTower, RotateCcw, Share2, WandSparkles } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Metric } from "@/components/ui/metric";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorStats, topSupporters } from "@/lib/data/demo";
 import { clearDemoBoosts, sumBoosts, useLiveBoosts } from "@/lib/client/live-boosts";
+import { creatorPaymentPath, defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
+import { creatorShareUrl, readCreatorProfile, saveCreatorProfile } from "@/lib/client/creator-profile";
 import { formatMoney } from "@/lib/utils";
 
-export function CreatorDashboardClient() {
+type InitialCreatorProfile = {
+  displayName: string;
+  handle: string;
+  email: string;
+};
+
+export function CreatorDashboardClient({ initialProfile }: { initialProfile?: InitialCreatorProfile }) {
   const boosts = useLiveBoosts();
+  const fallbackProfile = initialProfile ?? { displayName: defaultCreatorName, handle: defaultCreatorHandle, email: "creator@chatboost.local" };
+  const [creatorProfile, setCreatorProfile] = useState(fallbackProfile);
+  const [shareUrl, setShareUrl] = useState(creatorPaymentPath(fallbackProfile.handle));
+  const [copied, setCopied] = useState(false);
   const todayRevenue = sumBoosts(boosts);
   const stats = [
     { label: "Live revenue", value: formatMoney(todayRevenue), delta: `${boosts.length} boosts` },
@@ -18,8 +31,48 @@ export function CreatorDashboardClient() {
     { label: "Net creator earnings", value: formatMoney(Math.round(todayRevenue * 0.87)), delta: "After fees" }
   ];
 
+  useEffect(() => {
+    const profile = initialProfile ? saveCreatorProfile(initialProfile) : readCreatorProfile();
+    setCreatorProfile(profile);
+    setShareUrl(creatorShareUrl(profile));
+  }, [initialProfile]);
+
+  async function copyShareLink() {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
   return (
     <AppShell title="Creator dashboard">
+      <section className="mb-6 rounded-lg border border-line bg-white/[0.07] p-5">
+        <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
+          <div>
+            <p className="inline-flex items-center gap-2 text-sm font-medium text-ember">
+              <Share2 size={17} />
+              Viewer payment link
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold">{creatorProfile.displayName}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
+              Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields.
+            </p>
+          </div>
+          <div className="min-w-0 rounded-lg border border-line bg-black/30 p-3 xl:w-[520px]">
+            <p className="truncate font-mono text-sm text-white/76">{shareUrl}</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <Button className="flex-1" type="button" onClick={copyShareLink}>
+                {copied ? <Check size={17} /> : <Copy size={17} />}
+                {copied ? "Copied" : "Copy link"}
+              </Button>
+              <ButtonLink className="flex-1" href={creatorPaymentPath(creatorProfile.handle)} variant="secondary">
+                <ExternalLink size={17} />
+                Open page
+              </ButtonLink>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <Metric key={stat.label} {...stat} />

@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Activity, BadgeCheck, RadioTower, Users } from "lucide-react";
 import { PaymentPanel } from "@/components/creator/payment-panel";
 import { RecentBoosts } from "@/components/creator/recent-boosts";
+import { creatorPaymentPath, displayNameFromHandle, normalizeCreatorHandle } from "@/lib/creator";
 
 export default async function CreatorPublicPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle: rawHandle } = await params;
-  const handle = decodeURIComponent(rawHandle);
+  const handle = normalizeCreatorHandle(decodeURIComponent(rawHandle));
+  const creatorName = displayNameFromHandle(handle);
+  const creatorHandle = creatorPaymentPath(handle);
 
   return (
     <main className="min-h-screen px-5 py-8 text-white">
@@ -30,17 +33,17 @@ export default async function CreatorPublicPage({ params }: { params: Promise<{ 
               </div>
             </div>
             <div className="p-6">
-              <div className="-mt-16 grid size-24 place-items-center rounded-lg border border-line bg-black text-3xl font-semibold shadow-panel">N</div>
+              <div className="-mt-16 grid size-24 place-items-center rounded-lg border border-line bg-black text-3xl font-semibold shadow-panel">{creatorName.charAt(0)}</div>
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <h1 className="text-4xl font-semibold tracking-normal">Nova Plays</h1>
+                <h1 className="text-4xl font-semibold tracking-normal">{creatorName}</h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-mint/12 px-3 py-1 text-sm text-mint">
                   <BadgeCheck size={15} />
-                  YouTube verified
+                  Creator verified
                 </span>
               </div>
-              <p className="mt-2 text-white/56">{handle.startsWith("@") ? handle : `@${handle}`}</p>
+              <p className="mt-2 text-white/56">{creatorHandle}</p>
               <p className="mt-5 max-w-2xl leading-7 text-white/70">
-                Send a paid highlighted message to appear instantly on stream. Bigger boosts get stronger animations, voice reading, and leaderboard credit.
+                Send a paid highlighted message to {creatorName}. Add your name, message, amount, and payment method, then the boost appears on their stream.
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -66,7 +69,7 @@ export default async function CreatorPublicPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          <PaymentPanel />
+          <PaymentPanel creatorId={handle} creatorName={creatorName} creatorHandle={creatorHandle} />
         </section>
       </div>
     </main>

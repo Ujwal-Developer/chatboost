@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Activity, BadgeDollarSign, Bell, LayoutDashboard, Settings, Shield } from "lucide-react";
+import { Activity, BadgeDollarSign, Bell, LayoutDashboard, Settings, Shield, ShieldCheck } from "lucide-react";
 
 const nav = [
   { href: "/dashboard/creator", label: "Creator", icon: LayoutDashboard },
+  { href: "/creator/verification", label: "Verification", icon: ShieldCheck },
   { href: "/overlay/demo-creator", label: "Overlay", icon: Activity },
   { href: "/admin", label: "Admin", icon: Shield },
   { href: "/@nova", label: "Public page", icon: BadgeDollarSign }

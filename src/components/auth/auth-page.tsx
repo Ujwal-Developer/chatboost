@@ -7,11 +7,12 @@ import { ArrowRight, Chrome, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
 import { saveCreatorProfile } from "@/lib/client/creator-profile";
+import { creatorPlatforms, platformLabels } from "@/lib/creator-verification";
 
 const creatorCopy = {
   title: "Create your creator account",
-  body: "Set your creator name and handle. ChatBoost gives you one public payment link viewers can use without logging in.",
-  destination: "/dashboard/creator",
+  body: "Connect your real channel first. ChatBoost verifies creator ownership before the payment link is ready for viewers.",
+  destination: "/creator/verification",
   email: "creator@chatboost.local"
 };
 
@@ -19,7 +20,15 @@ export function AuthPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "saving">("idle");
 
-  function completeLogin(profile = { email: creatorCopy.email, displayName: defaultCreatorName, handle: defaultCreatorHandle }) {
+  function completeLogin(
+    profile = {
+      email: creatorCopy.email,
+      displayName: defaultCreatorName,
+      handle: defaultCreatorHandle,
+      platform: "youtube",
+      channelUrl: "https://youtube.com/@nova"
+    }
+  ) {
     saveCreatorProfile(profile);
     router.push(creatorCopy.destination);
   }
@@ -31,7 +40,9 @@ export function AuthPage() {
     completeLogin({
       email: String(data.get("email") ?? creatorCopy.email),
       displayName: String(data.get("displayName") ?? defaultCreatorName),
-      handle: String(data.get("handle") ?? defaultCreatorHandle)
+      handle: String(data.get("handle") ?? defaultCreatorHandle),
+      platform: String(data.get("platform") ?? "youtube"),
+      channelUrl: String(data.get("channelUrl") ?? "")
     });
   }
 
@@ -48,7 +59,7 @@ export function AuthPage() {
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/64">{creatorCopy.body}</p>
         </section>
 
-        <form className="surface rounded-lg p-6" action="/dashboard/creator" method="get" onSubmit={handleSubmit} data-testid="creator-login-form">
+        <form className="surface rounded-lg p-6" action="/creator/verification" method="get" onSubmit={handleSubmit} data-testid="creator-login-form">
           <label className="block text-sm text-white/62" htmlFor="displayName">
             Creator name
           </label>
@@ -91,6 +102,34 @@ export function AuthPage() {
             className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
           />
 
+          <label className="mt-4 block text-sm text-white/62" htmlFor="platform">
+            Main creator platform
+          </label>
+          <select
+            id="platform"
+            name="platform"
+            defaultValue="youtube"
+            className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
+          >
+            {creatorPlatforms.map((platform) => (
+              <option key={platform} value={platform} className="bg-black">
+                {platformLabels[platform]}
+              </option>
+            ))}
+          </select>
+
+          <label className="mt-4 block text-sm text-white/62" htmlFor="channelUrl">
+            Channel or profile URL
+          </label>
+          <input
+            id="channelUrl"
+            name="channelUrl"
+            type="url"
+            required
+            defaultValue="https://youtube.com/@nova"
+            className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
+          />
+
           <Button className="mt-6 w-full" type="submit" disabled={status === "saving"}>
             <Mail size={17} />
             {status === "saving" ? "Creating account" : "Create account"}
@@ -103,7 +142,7 @@ export function AuthPage() {
           </Button>
 
           <p className="mt-5 text-sm leading-6 text-white/45">
-            Demo auth stores this creator profile in your browser. The next screen shows the payment link to share with viewers.
+            The next screen verifies that you control the channel before ChatBoost marks your payment link as ready.
           </p>
         </form>
       </div>

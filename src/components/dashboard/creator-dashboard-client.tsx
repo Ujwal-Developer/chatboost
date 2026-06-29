@@ -1,28 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Download, ExternalLink, RadioTower, RotateCcw, Share2, WandSparkles } from "lucide-react";
+import { AlertTriangle, Check, Copy, Download, ExternalLink, RadioTower, RotateCcw, ShieldCheck, Share2, WandSparkles } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Metric } from "@/components/ui/metric";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorStats, topSupporters } from "@/lib/data/demo";
 import { clearDemoBoosts, sumBoosts, useLiveBoosts } from "@/lib/client/live-boosts";
-import { creatorPaymentPath, defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
-import { creatorShareUrl, readCreatorProfile, saveCreatorProfile } from "@/lib/client/creator-profile";
+import { creatorPaymentPath } from "@/lib/creator";
+import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreatorProfile, type CreatorProfile } from "@/lib/client/creator-profile";
+import { normalizePlatform } from "@/lib/creator-verification";
 import { formatMoney } from "@/lib/utils";
 
 type InitialCreatorProfile = {
   displayName: string;
   handle: string;
   email: string;
+  platform?: string;
+  channelUrl?: string;
 };
 
 export function CreatorDashboardClient({ initialProfile }: { initialProfile?: InitialCreatorProfile }) {
   const boosts = useLiveBoosts();
-  const fallbackProfile = initialProfile ?? { displayName: defaultCreatorName, handle: defaultCreatorHandle, email: "creator@chatboost.local" };
-  const [creatorProfile, setCreatorProfile] = useState(fallbackProfile);
+  const fallbackProfile: CreatorProfile = initialProfile ? { ...fallbackCreatorProfile, ...initialProfile, platform: normalizePlatform(initialProfile.platform) } : fallbackCreatorProfile;
+  const [creatorProfile, setCreatorProfile] = useState<CreatorProfile>(fallbackProfile);
   const [shareUrl, setShareUrl] = useState(creatorPaymentPath(fallbackProfile.handle));
   const [copied, setCopied] = useState(false);
+  const isVerified = creatorProfile.verificationStatus === "verified";
   const todayRevenue = sumBoosts(boosts);
   const stats = [
     { label: "Live revenue", value: formatMoney(todayRevenue), delta: `${boosts.length} boosts` },
@@ -49,26 +53,40 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-ember">
-              <Share2 size={17} />
-              Viewer payment link
+              {isVerified ? <Share2 size={17} /> : <AlertTriangle size={17} />}
+              {isVerified ? "Verified viewer payment link" : "Creator verification required"}
             </p>
             <h2 className="mt-2 text-2xl font-semibold">{creatorProfile.displayName}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
-              Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields.
+              {isVerified
+                ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."
+                : "Verify channel ownership, identity, and payout readiness before collecting money as this creator."}
             </p>
           </div>
           <div className="min-w-0 rounded-lg border border-line bg-black/30 p-3 xl:w-[520px]">
-            <p className="truncate font-mono text-sm text-white/76">{shareUrl}</p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <Button className="flex-1" type="button" onClick={copyShareLink}>
-                {copied ? <Check size={17} /> : <Copy size={17} />}
-                {copied ? "Copied" : "Copy link"}
-              </Button>
-              <ButtonLink className="flex-1" href={creatorPaymentPath(creatorProfile.handle)} variant="secondary">
-                <ExternalLink size={17} />
-                Open page
-              </ButtonLink>
-            </div>
+            {isVerified ? (
+              <>
+                <p className="truncate font-mono text-sm text-white/76">{shareUrl}</p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Button className="flex-1" type="button" onClick={copyShareLink}>
+                    {copied ? <Check size={17} /> : <Copy size={17} />}
+                    {copied ? "Copied" : "Copy link"}
+                  </Button>
+                  <ButtonLink className="flex-1" href={creatorPaymentPath(creatorProfile.handle)} variant="secondary">
+                    <ExternalLink size={17} />
+                    Open page
+                  </ButtonLink>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm leading-6 text-white/58">Payment link locked until creator verification is complete.</p>
+                <ButtonLink href="/creator/verification">
+                  <ShieldCheck size={17} />
+                  Verify creator
+                </ButtonLink>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Activity, BadgeDollarSign, Bell, LayoutDashboard, Settings, Shield, ShieldCheck } from "lucide-react";
+import { BrandLink } from "@/components/brand/brand-logo";
 
 const nav = [
   { href: "/dashboard/creator", label: "Creator", icon: LayoutDashboard },
@@ -14,10 +15,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
   return (
     <main className="min-h-screen bg-ink text-white">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-black/70 p-4 lg:block">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
-          <span className="grid size-8 place-items-center rounded-lg bg-white text-black">CB</span>
-          ChatBoost
-        </Link>
+        <BrandLink />
         <nav className="mt-8 space-y-1">
           {nav.map((item) => {
             const Icon = item.icon;

@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Mail, Youtube } from "lucide-react";
+import { BrandLink } from "@/components/brand/brand-logo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { defaultCreatorHandle, defaultCreatorName } from "@/lib/creator";
 import { saveCreatorProfile } from "@/lib/client/creator-profile";
@@ -50,10 +50,7 @@ export function AuthPage() {
     <main className="min-h-screen bg-ink px-5 py-8 text-white">
       <div className="mx-auto grid min-h-[calc(100vh-64px)] max-w-6xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
         <section>
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-white">
-            <span className="grid size-8 place-items-center rounded-lg bg-white text-black">CB</span>
-            ChatBoost
-          </Link>
+          <BrandLink className="inline-flex" />
           <p className="mt-12 text-sm font-medium uppercase tracking-[0.18em] text-ember">Secure access</p>
           <h1 className="mt-4 text-5xl font-semibold leading-tight tracking-normal md:text-6xl">{creatorCopy.title}</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/64">{creatorCopy.body}</p>

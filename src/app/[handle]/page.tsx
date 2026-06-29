@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Activity, BadgeCheck, RadioTower, Users } from "lucide-react";
+import { BrandLink } from "@/components/brand/brand-logo";
 import { PaymentPanel } from "@/components/creator/payment-panel";
 import { RecentBoosts } from "@/components/creator/recent-boosts";
 import { creatorPaymentPath, displayNameFromHandle, normalizeCreatorHandle } from "@/lib/creator";
@@ -13,10 +13,7 @@ export default async function CreatorPublicPage({ params }: { params: Promise<{ 
   return (
     <main className="min-h-screen px-5 py-8 text-white">
       <div className="mx-auto max-w-6xl">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-white">
-          <span className="grid size-8 place-items-center rounded-lg bg-white text-black">CB</span>
-          ChatBoost
-        </Link>
+        <BrandLink className="inline-flex text-white/75 hover:text-white" />
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded-lg border border-line bg-white/6">

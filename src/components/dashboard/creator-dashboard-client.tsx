@@ -66,7 +66,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
                 {verificationLabel}
               </span>
             </div>
-            <p className="mt-1 text-sm text-white/45">@{creatorProfile.handle} · {creatorProfile.email}</p>
+            <p className="mt-1 text-sm text-white/45">@{creatorProfile.handle} / {creatorProfile.email}</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
               {isVerified
                 ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."

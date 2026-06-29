@@ -73,7 +73,12 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
                 <ShieldCheck size={15} />
                 Connected {connectedAccount.provider}: {connectedAccount.displayName} ({connectedAccount.handle})
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-lg border border-ember/25 bg-ember/10 px-3 py-2 text-sm text-ember">
+                <AlertTriangle size={15} />
+                No real platform account connected yet. Connect YouTube to prove this creator owns the channel.
+              </p>
+            )}
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
               {isVerified
                 ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."
@@ -100,11 +105,15 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
             ) : (
               <div className="flex flex-col gap-3">
                 <p className="text-sm leading-6 text-white/58">
-                  {isInReview ? "Payment link locked while admin reviews your creator proof." : "Payment link locked until creator verification is complete."}
+                  {isInReview
+                    ? "Payment link locked while admin reviews your creator proof."
+                    : connectedAccount
+                      ? "Platform account connected. Finish identity and payout review to unlock the payment link."
+                      : "Payment link locked until a real creator platform account is connected and reviewed."}
                 </p>
                 <ButtonLink href="/creator/verification">
                   <ShieldCheck size={17} />
-                  {isInReview ? "View review status" : "Verify creator"}
+                  {isInReview ? "View review status" : connectedAccount ? "Finish verification" : "Connect creator platform"}
                 </ButtonLink>
               </div>
             )}

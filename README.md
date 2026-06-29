@@ -28,7 +28,7 @@ npm run prisma:migrate
 Demo verification uses browser storage. To test with a real YouTube creator account, configure OAuth in Google Cloud and add these environment variables in Vercel:
 
 ```bash
-NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
+NEXT_PUBLIC_APP_URL=https://chatboost.rynovax.com
 AUTH_SECRET=use-a-long-random-secret-at-least-24-chars
 YOUTUBE_CLIENT_ID=your-google-oauth-client-id
 YOUTUBE_CLIENT_SECRET=your-google-oauth-client-secret
@@ -37,7 +37,7 @@ YOUTUBE_CLIENT_SECRET=your-google-oauth-client-secret
 Add this authorized redirect URI to the Google OAuth client:
 
 ```text
-https://your-vercel-domain.vercel.app/api/auth/youtube/callback
+https://chatboost.rynovax.com/api/auth/youtube/callback
 ```
 
 Then open `/creator/verification` and click **Connect YouTube**. ChatBoost will send the creator through Google OAuth, read the authenticated YouTube channel, and mark channel ownership as verified. Identity and payout checks still need production KYC/payout providers before real money launch.

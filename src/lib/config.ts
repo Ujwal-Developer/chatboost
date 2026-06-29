@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().url().default("https://chatboost.rynovax.com"),
   DATABASE_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
   AUTH_SECRET: z.string().min(24).optional(),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Globe2, RadioTower, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Globe2, LogIn, RadioTower, ShieldCheck, Zap } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Section } from "@/components/ui/section";
 import { SiteNav, featureIcons } from "@/components/marketing/site-nav";
@@ -110,18 +110,19 @@ export default function LandingPage() {
               ChatBoost handles guest payments, highlighted messages, OBS overlays, payout accounting, and admin review without locking creators into one streaming platform.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/@nova">
-                Send a test boost
+              <ButtonLink href="/login/creator">
+                <LogIn size={18} />
+                Create creator account
                 <ArrowRight size={18} />
               </ButtonLink>
-              <ButtonLink href="/dashboard/creator" variant="secondary">
-                View dashboard
+              <ButtonLink href="/@nova" variant="secondary">
+                Send a test boost
               </ButtonLink>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/52">
-              <span>Creators:</span>
+            <div className="mt-4 rounded-lg border border-white/12 bg-white/[0.06] p-4 text-sm text-white/66">
+              <span className="font-semibold text-white">Creators start here:</span>{" "}
               <Link className="font-medium text-white hover:text-white/72" href="/login/creator">
-                create account and get your share link
+                log in or create an account to get your viewer payment link.
               </Link>
             </div>
             <div className="mt-8 grid gap-3 text-sm text-white/62 sm:grid-cols-3">

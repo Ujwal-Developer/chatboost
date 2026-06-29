@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, RadioTower, ShieldCheck, WalletCards } from "lucide-react";
+import { BarChart3, LogIn, RadioTower, ShieldCheck, WalletCards } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 
 export function SiteNav() {
@@ -23,14 +23,20 @@ export function SiteNav() {
           <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/admin">
             Admin
           </Link>
-          <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/login/creator">
+          <Link className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/16" href="/login/creator">
             Creator account
           </Link>
         </div>
-        <ButtonLink href="/@nova" className="h-10">
-          <WalletCards size={16} />
-          Send test boost
-        </ButtonLink>
+        <div className="flex items-center gap-2">
+          <ButtonLink href="/@nova" variant="secondary" className="hidden h-10 sm:inline-flex">
+            <WalletCards size={16} />
+            Test boost
+          </ButtonLink>
+          <ButtonLink href="/login/creator" className="h-10">
+            <LogIn size={16} />
+            Creator login
+          </ButtonLink>
+        </div>
       </nav>
     </header>
   );

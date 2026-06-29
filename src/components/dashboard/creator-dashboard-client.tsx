@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Copy, Download, ExternalLink, RadioTower, RotateCcw, ShieldCheck, Share2, WandSparkles } from "lucide-react";
+import { AlertTriangle, Check, Clock3, Copy, Download, ExternalLink, RadioTower, RotateCcw, ShieldCheck, Share2, UserRound, WandSparkles } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Metric } from "@/components/ui/metric";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -27,6 +27,9 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
   const [shareUrl, setShareUrl] = useState(creatorPaymentPath(fallbackProfile.handle));
   const [copied, setCopied] = useState(false);
   const isVerified = creatorProfile.verificationStatus === "verified";
+  const isInReview = creatorProfile.verificationStatus === "in_review";
+  const isRejected = creatorProfile.verificationStatus === "rejected";
+  const verificationLabel = isVerified ? "Verified" : isInReview ? "In admin review" : isRejected ? "Rejected" : "Verification needed";
   const todayRevenue = sumBoosts(boosts);
   const stats = [
     { label: "Live revenue", value: formatMoney(todayRevenue), delta: `${boosts.length} boosts` },
@@ -53,14 +56,23 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-ember">
-              {isVerified ? <Share2 size={17} /> : <AlertTriangle size={17} />}
-              {isVerified ? "Verified viewer payment link" : "Creator verification required"}
+              <UserRound size={17} />
+              Logged in creator account
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">{creatorProfile.displayName}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-semibold">{creatorProfile.displayName}</h2>
+              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${isVerified ? "bg-mint/12 text-mint" : "bg-ember/10 text-ember"}`}>
+                {isInReview ? <Clock3 size={14} /> : isVerified ? <Share2 size={14} /> : <AlertTriangle size={14} />}
+                {verificationLabel}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-white/45">@{creatorProfile.handle} · {creatorProfile.email}</p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
               {isVerified
                 ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."
-                : "Verify channel ownership, identity, and payout readiness before collecting money as this creator."}
+                : isInReview
+                  ? "Your creator account is logged in and waiting for admin approval. The payment link unlocks after review."
+                  : "Verify channel ownership, identity, and payout readiness before collecting money as this creator."}
             </p>
           </div>
           <div className="min-w-0 rounded-lg border border-line bg-black/30 p-3 xl:w-[520px]">
@@ -80,10 +92,12 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
               </>
             ) : (
               <div className="flex flex-col gap-3">
-                <p className="text-sm leading-6 text-white/58">Payment link locked until creator verification is complete.</p>
+                <p className="text-sm leading-6 text-white/58">
+                  {isInReview ? "Payment link locked while admin reviews your creator proof." : "Payment link locked until creator verification is complete."}
+                </p>
                 <ButtonLink href="/creator/verification">
                   <ShieldCheck size={17} />
-                  Verify creator
+                  {isInReview ? "View review status" : "Verify creator"}
                 </ButtonLink>
               </div>
             )}

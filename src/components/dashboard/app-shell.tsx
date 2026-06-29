@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Activity, BadgeDollarSign, Bell, LayoutDashboard, Settings, Shield, ShieldCheck } from "lucide-react";
 import { BrandLink } from "@/components/brand/brand-logo";
+import { CreatorAccountStatus } from "@/components/dashboard/creator-account-status";
 
 const nav = [
   { href: "/dashboard/creator", label: "Creator", icon: LayoutDashboard },
@@ -32,6 +33,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-ink/95 px-5">
           <h1 className="text-lg font-semibold">{title}</h1>
           <div className="flex items-center gap-2">
+            <CreatorAccountStatus />
             <Link href="/notifications" className="grid size-10 place-items-center rounded-lg border border-line bg-white/6 text-white/70 hover:bg-white/10" aria-label="Notifications">
               <Bell size={18} />
             </Link>

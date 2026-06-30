@@ -174,7 +174,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         {status === "submitting" ? "Processing payment" : "Send tip"}
       </Button>
       <p className="mt-3 text-center text-xs text-white/45">
-        Viewers do not need an account. This shared creator link sends the payment and message straight to the creator.
+        No account needed. Your tip and message go straight to the creator.
       </p>
     </form>
   );

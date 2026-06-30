@@ -1,9 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { CreditCard, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { addLiveBoost, boostFromPaymentResponse, type LiveBoost } from "@/lib/client/live-boosts";
 import { formatMoney } from "@/lib/utils";
 
 const amounts = [500, 1000, 2500, 5000];
@@ -24,8 +23,6 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
   const [provider, setProvider] = useState("stripe");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [lastBoost, setLastBoost] = useState<LiveBoost | null>(null);
-  const [lastPaymentMode, setLastPaymentMode] = useState<"sandbox" | "live">("sandbox");
   const currency = provider === "razorpay" ? "INR" : "USD";
   const amountMajor = amount / 100;
 
@@ -66,21 +63,26 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         throw new Error(payload.error ?? "Payment failed");
       }
 
-      const boost = boostFromPaymentResponse({
-        creatorId,
-        displayName,
-        message,
-        amount,
-        currency,
-        provider,
-        paymentId: payload.payment.id,
-        moderationStatus: payload.payment.moderation.status
-      });
-
-      addLiveBoost(boost);
-      setLastBoost(boost);
-      setLastPaymentMode(payload.mode === "live" ? "live" : "sandbox");
+      const intentId = payload.payment.idempotencyKey;
+      window.sessionStorage.setItem(
+        `chatboost.checkout.${intentId}`,
+        JSON.stringify({
+          intentId,
+          mode: payload.mode === "live" ? "live" : "sandbox",
+          creatorId,
+          creatorName,
+          creatorHandle,
+          displayName,
+          message,
+          amount,
+          currency,
+          provider,
+          paymentId: payload.payment.id,
+          moderationStatus: payload.payment.moderation.status
+        })
+      );
       setStatus("success");
+      window.location.assign(payload.intent.checkoutUrl);
     } catch (caught) {
       setStatus("error");
       setError(caught instanceof Error ? caught.message : "Payment failed");
@@ -156,19 +158,6 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         ))}
       </select>
 
-      {status === "success" && lastBoost ? (
-        <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">
-          <div className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-            <p>
-              {lastPaymentMode === "live"
-                ? `${lastBoost.amountLabel} tip sent. Thanks for supporting ${creatorName}.`
-                : `${lastBoost.amountLabel} preview tip saved. Real checkout will go live after payment provider setup.`}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
       {status === "error" && error ? (
         <div className="mt-5 rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200" data-testid="payment-error">
           {error}
@@ -177,7 +166,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
 
       <Button className="mt-5 w-full" type="submit" disabled={status === "submitting"}>
         {status === "submitting" ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
-        {status === "submitting" ? "Processing payment" : "Send tip"}
+        {status === "submitting" ? "Opening checkout" : "Continue to payment"}
       </Button>
       <p className="mt-3 text-center text-xs text-white/45">
         No account needed. Your tip and message go straight to the creator.

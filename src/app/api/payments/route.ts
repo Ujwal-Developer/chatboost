@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     payment: {
       id: `pay_${idempotencyKey}`,
       idempotencyKey,
-      status: "SANDBOX_SUCCEEDED",
+      status: "CHECKOUT_PENDING",
       provider,
       fees,
       moderation

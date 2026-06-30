@@ -18,9 +18,6 @@ export function SiteNav() {
           <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/dashboard/creator">
             Creator
           </Link>
-          <Link className="rounded-lg px-3 py-2 text-sm text-white/68 hover:bg-white/8 hover:text-white" href="/admin">
-            Admin
-          </Link>
           <Link className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/16" href="/login/creator">
             Creator account
           </Link>
@@ -28,7 +25,7 @@ export function SiteNav() {
         <div className="flex items-center gap-2">
           <ButtonLink href="/@nova" variant="secondary" className="hidden h-10 sm:inline-flex">
             <WalletCards size={16} />
-            Test boost
+            Preview payment
           </ButtonLink>
           <ButtonLink href="/login/creator" className="h-10">
             <LogIn size={16} />

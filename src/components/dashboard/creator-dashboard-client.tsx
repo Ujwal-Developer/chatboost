@@ -29,7 +29,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
   const isVerified = creatorProfile.verificationStatus === "verified";
   const isInReview = creatorProfile.verificationStatus === "in_review";
   const isRejected = creatorProfile.verificationStatus === "rejected";
-  const verificationLabel = isVerified ? "Verified" : isInReview ? "In admin review" : isRejected ? "Rejected" : "Verification needed";
+  const verificationLabel = isVerified ? "Verified" : isInReview ? "In platform review" : isRejected ? "Rejected" : "Verification needed";
   const connectedAccount = creatorProfile.connectedAccounts.find((account) => account.provider === creatorProfile.platform) ?? creatorProfile.connectedAccounts[0];
   const todayRevenue = sumBoosts(boosts);
   const stats = [
@@ -83,7 +83,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
               {isVerified
                 ? "Share this link with viewers. It opens a payment page with name, message, amount, and payment method fields."
                 : isInReview
-                  ? "Your creator account is logged in and waiting for admin approval. The payment link unlocks after review."
+                  ? "Your creator account is logged in and waiting for platform approval. The payment link unlocks after review."
                   : "Verify channel ownership, identity, and payout readiness before collecting money as this creator."}
             </p>
           </div>
@@ -106,7 +106,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
               <div className="flex flex-col gap-3">
                 <p className="text-sm leading-6 text-white/58">
                   {isInReview
-                    ? "Payment link locked while admin reviews your creator proof."
+                    ? "Payment link locked while your creator proof is reviewed."
                     : connectedAccount
                       ? "Platform account connected. Finish identity and payout review to unlock the payment link."
                       : "Payment link locked until channel proof is submitted and reviewed."}
@@ -192,7 +192,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
         </ButtonLink>
         <ButtonLink href="/settings" variant="secondary">
           <WandSparkles size={17} />
-          Moderation settings
+          Payout setup
         </ButtonLink>
       </div>
     </AppShell>

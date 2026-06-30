@@ -3,8 +3,11 @@ import Link from "next/link";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Metric } from "@/components/ui/metric";
 import { adminMetrics } from "@/lib/data/demo";
+import { requireAdminAccess } from "@/lib/auth/admin";
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  await requireAdminAccess();
+
   return (
     <AppShell title="Admin dashboard">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

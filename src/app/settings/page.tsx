@@ -1,9 +1,13 @@
 import { AppShell } from "@/components/dashboard/app-shell";
+import { PayoutSettingsClient } from "@/components/settings/payout-settings-client";
 
 export default function SettingsPage() {
   return (
     <AppShell title="Settings">
-      <section className="surface max-w-3xl rounded-lg p-5">
+      <div className="grid gap-6">
+        <PayoutSettingsClient />
+
+      <section className="surface rounded-lg p-5">
         <h2 className="text-2xl font-semibold">Account settings</h2>
         <div className="mt-5 grid gap-4">
           {["Email receipts", "Fraud alerts", "Weekly creator report", "Overlay sound effects"].map((item, index) => (
@@ -14,6 +18,7 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
+      </div>
     </AppShell>
   );
 }

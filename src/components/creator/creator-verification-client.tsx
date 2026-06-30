@@ -99,7 +99,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     setProfile(next);
     setStatusMessage(
       checksComplete
-        ? "Verification submitted for admin review. The payment link unlocks after approval."
+        ? "Verification submitted for platform review. The payment link unlocks after approval."
         : proofVisible && channelOwned
           ? "Channel proof saved. Complete identity and payout fields when you are ready to unlock payments."
           : "Verification saved. Add the proof code to a public page and paste the proof location URL."
@@ -122,7 +122,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </p>
             </div>
             <span className={`rounded-lg border px-3 py-2 text-sm font-semibold ${isVerified ? "border-mint/35 bg-mint/10 text-mint" : "border-ember/35 bg-ember/10 text-ember"}`}>
-              {isVerified ? "Verified" : isInReview ? "In admin review" : `${progress}/5 checks`}
+              {isVerified ? "Verified" : isInReview ? "In platform review" : `${progress}/5 checks`}
             </span>
           </div>
 
@@ -135,7 +135,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             <div className="rounded-lg border border-line bg-black/25 p-4">
               <p className="text-sm font-semibold text-white">Universal channel proof</p>
               <p className="mt-2 text-sm leading-6 text-white/58">
-                Works for YouTube, Twitch, Kick, Instagram, TikTok, a website, or any public creator profile. Admins verify the code before the payment link can unlock.
+                Works for YouTube, Twitch, Kick, Instagram, TikTok, a website, or any public creator profile. The proof code is reviewed before the payment link can unlock.
               </p>
               <ol className="mt-4 grid gap-2 text-sm leading-6 text-white/68">
                 <li className="rounded-lg border border-line bg-black/24 px-3 py-2">1. Paste your official channel/profile URL below.</li>
@@ -225,7 +225,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="submit">
                 <BadgeCheck size={17} />
-                Submit for admin review
+                Submit for review
               </Button>
               <ButtonLink href="/dashboard/creator" variant="secondary">
                 Go to dashboard
@@ -236,10 +236,10 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
         <aside className="space-y-4">
           {[
-            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? "Ready for admin proof-code review" : "Add a public proof-code URL for any supported creator platform"],
+            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? "Ready for proof-code review" : "Add a public proof-code URL for any supported creator platform"],
             [IdCard, "Identity", profile.verificationChecks.identity ? "Legal creator name captured" : "Needed before payouts"],
             [WalletCards, "Payout readiness", profile.verificationChecks.payout ? "Country captured for provider routing" : "Needed for tax and payout checks"],
-            [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for admin approval" : "Locked until all checks pass and admin approves"]
+            [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for platform approval" : "Locked until all checks pass and review is approved"]
           ].map(([Icon, title, body]) => {
             const TypedIcon = Icon as typeof ShieldCheck;
             return (

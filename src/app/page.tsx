@@ -107,7 +107,7 @@ export default function LandingPage() {
               Paid messages, delivered live.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-white/66 md:text-lg">
-              ChatBoost handles guest payments, highlighted messages, OBS overlays, payout accounting, and admin review without locking creators into one streaming platform.
+              ChatBoost handles guest payments, highlighted messages, OBS overlays, payout accounting, and creator review without locking creators into one streaming platform.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/login/creator">
@@ -185,7 +185,7 @@ export default function LandingPage() {
         </div>
       </Section>
 
-      <Section eyebrow="Controls" title="Admin, fraud, and payout workflows are designed into the system.">
+      <Section eyebrow="Controls" title="Fraud, safety, and payout workflows are designed into the system.">
         <div className="grid gap-4 md:grid-cols-3">
           {[
             [ShieldCheck, "Webhook signatures, idempotency keys, duplicate payment detection, RBAC, rate limits, and audit logs."],

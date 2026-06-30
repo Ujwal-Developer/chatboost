@@ -1,10 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { CheckCircle2, CreditCard, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addLiveBoost, boostFromPaymentResponse, type LiveBoost } from "@/lib/client/live-boosts";
-import { calculateFeeBreakdown } from "@/lib/domain/fees";
 import { formatMoney } from "@/lib/utils";
 
 const amounts = [500, 1000, 2500, 5000];
@@ -28,15 +27,6 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
   const [lastBoost, setLastBoost] = useState<LiveBoost | null>(null);
   const currency = provider === "razorpay" ? "INR" : "USD";
   const amountMajor = amount / 100;
-  const fees = useMemo(
-    () =>
-      calculateFeeBreakdown({
-        grossAmount: amount,
-        gatewayFeeBps: provider === "razorpay" ? 200 : provider === "paypal" ? 340 : 290,
-        fixedGatewayFee: provider === "stripe" ? 30 : 0
-      }),
-    [amount, provider]
-  );
 
   function updateAmountFromMajor(value: string) {
     const next = Math.round(Number(value) * 100);
@@ -163,17 +153,6 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
           </option>
         ))}
       </select>
-
-      <div className="mt-5 rounded-lg border border-line bg-black/25 p-4 text-sm text-white/68">
-        <div className="flex justify-between">
-          <span>Creator receives</span>
-          <strong className="text-white">{formatMoney(fees.netCreatorEarnings, currency)}</strong>
-        </div>
-        <div className="mt-2 flex justify-between">
-          <span>ChatBoost platform fee</span>
-          <span>{formatMoney(fees.platformFee, currency)}</span>
-        </div>
-      </div>
 
       {status === "success" && lastBoost ? (
         <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, CheckCircle2, ExternalLink, IdCard, LinkIcon, ShieldCheck, WalletCards, Youtube } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, IdCard, LinkIcon, ShieldCheck, WalletCards } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorPaymentPath, defaultCreatorHandle, defaultCreatorName, normalizeCreatorHandle } from "@/lib/creator";
@@ -9,7 +9,6 @@ import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreato
 import {
   creatorPlatforms,
   creatorProofCode,
-  emptyVerificationChecks,
   isLikelyChannelUrl,
   normalizePlatform,
   platformLabels,
@@ -24,24 +23,6 @@ type InitialVerificationProfile = {
   platform?: string;
   channelUrl?: string;
   auth?: string;
-};
-
-type CreatorOAuthSessionResponse = {
-  mode: "real" | "demo";
-  authenticated: boolean;
-  session: null | {
-    provider: "youtube";
-    email: string;
-    name: string;
-    avatarUrl?: string;
-    channelId: string;
-    channelTitle: string;
-    channelHandle: string;
-    channelUrl: string;
-    handle: string;
-    proofCode: string;
-    verifiedAt: string;
-  };
 };
 
 function profileFromInitial(initialProfile?: InitialVerificationProfile): CreatorProfile {
@@ -62,89 +43,17 @@ function profileFromInitial(initialProfile?: InitialVerificationProfile): Creato
 export function CreatorVerificationClient({ initialProfile }: { initialProfile?: InitialVerificationProfile }) {
   const [profile, setProfile] = useState<CreatorProfile>(fallbackCreatorProfile);
   const [statusMessage, setStatusMessage] = useState("");
-  const [authMode, setAuthMode] = useState<"checking" | "real" | "demo">("checking");
   const [selectedPlatform, setSelectedPlatform] = useState(profile.platform);
   const progress = verificationProgress(profile.verificationChecks);
   const shareUrl = useMemo(() => creatorShareUrl(profile), [profile]);
   const isVerified = profile.verificationStatus === "verified";
   const isInReview = profile.verificationStatus === "in_review";
-  const connectedAccount = profile.connectedAccounts.find((account) => account.provider === profile.platform) ?? profile.connectedAccounts[0];
-  const hasOAuthConnection = connectedAccount?.verificationSource === "oauth";
 
   useEffect(() => {
     const next = profileFromInitial(initialProfile);
     setProfile(saveCreatorProfile(next));
     setSelectedPlatform(next.platform);
   }, [initialProfile]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadOAuthSession() {
-      try {
-        const response = await fetch("/api/auth/creator/session");
-        const payload = (await response.json()) as CreatorOAuthSessionResponse;
-        if (cancelled) return;
-
-        setAuthMode(payload.mode);
-
-        if (payload.authenticated && payload.session) {
-          const currentProfile = readCreatorProfile();
-          const connectedAccounts = [
-            {
-              provider: "youtube" as const,
-              providerAccountId: payload.session.channelId,
-              displayName: payload.session.channelTitle || payload.session.name,
-              handle: payload.session.channelHandle,
-              url: payload.session.channelUrl,
-              avatarUrl: payload.session.avatarUrl,
-              verificationSource: "oauth" as const,
-              connectedAt: payload.session.verifiedAt
-            },
-            ...currentProfile.connectedAccounts.filter((account) => !(account.provider === "youtube" && account.verificationSource === "oauth"))
-          ];
-          const nextVerificationStatus =
-            currentProfile.verificationStatus === "verified"
-              ? "verified"
-              : currentProfile.verificationChecks.identity && currentProfile.verificationChecks.payout
-                ? "in_review"
-                : "pending";
-          const next = saveCreatorProfile({
-            email: payload.session.email,
-            displayName: payload.session.channelTitle || payload.session.name,
-            handle: payload.session.handle,
-            platform: "youtube",
-            channelUrl: payload.session.channelUrl,
-            channelHandle: payload.session.channelHandle,
-            proofCode: payload.session.proofCode,
-            verificationChecks: {
-              ...emptyVerificationChecks,
-              email: true,
-              channel: true,
-              proofCode: true,
-              identity: currentProfile.verificationChecks.identity,
-              payout: currentProfile.verificationChecks.payout
-            },
-            verificationStatus: nextVerificationStatus,
-            legalName: currentProfile.legalName,
-            payoutCountry: currentProfile.payoutCountry,
-            connectedAccounts
-          });
-          setProfile(next);
-          setSelectedPlatform(next.platform);
-          setStatusMessage("Real YouTube channel connected. ChatBoost now knows which channel this creator owns.");
-        }
-      } catch {
-        if (!cancelled) setAuthMode("demo");
-      }
-    }
-
-    loadOAuthSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,9 +63,9 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     const proofLocationUrl = String(data.get("proofLocationUrl") ?? "").trim();
     const legalName = String(data.get("legalName") ?? "").trim();
     const payoutCountry = String(data.get("payoutCountry") ?? "").trim().toUpperCase();
-    const proofConfirmed = hasOAuthConnection || data.get("proofConfirmed") === "on";
-    const channelOwned = hasOAuthConnection || isLikelyChannelUrl(channelUrl);
-    const proofVisible = hasOAuthConnection || (proofConfirmed && isLikelyChannelUrl(proofLocationUrl));
+    const proofConfirmed = data.get("proofConfirmed") === "on";
+    const channelOwned = isLikelyChannelUrl(channelUrl);
+    const proofVisible = proofConfirmed && isLikelyChannelUrl(proofLocationUrl);
 
     const verificationChecks = {
       email: String(data.get("email") ?? "").includes("@"),
@@ -235,49 +144,6 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </ol>
             </div>
 
-            <div className="rounded-lg border border-line bg-black/25 p-4">
-              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div>
-                  <p className="text-sm font-semibold text-white">Optional YouTube OAuth shortcut</p>
-                  <p className="mt-1 text-sm leading-6 text-white/58">
-                    {hasOAuthConnection
-                      ? "Connected by Google OAuth. This replaces manual channel proof for ownership."
-                      : authMode === "real"
-                        ? "Connect the creator's real YouTube account. ChatBoost will read the channel owned by that Google account."
-                        : authMode === "demo"
-                          ? "Google OAuth is optional. Use the universal proof-code flow below for worldwide creators without Google Cloud billing."
-                          : "Checking real authentication configuration..."}
-                  </p>
-                </div>
-                <ButtonLink href="/api/auth/youtube/start" variant={authMode === "real" ? "primary" : "secondary"}>
-                  <Youtube size={17} />
-                  {hasOAuthConnection ? "Reconnect YouTube" : "Connect YouTube"}
-                </ButtonLink>
-              </div>
-              {hasOAuthConnection ? (
-                <div className="mt-3 rounded-lg border border-mint/25 bg-mint/10 p-3 text-sm leading-6 text-mint">
-                  Connected as {connectedAccount.displayName} ({connectedAccount.handle}). Platform account ID is saved for creator ownership checks.
-                </div>
-              ) : null}
-              {initialProfile?.auth === "missing-youtube-env" ? (
-                <div className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-4 text-sm text-ember">
-                  <p className="font-semibold">Connect YouTube is ready in code, but off in deployment.</p>
-                  <p className="mt-2 leading-6">
-                    Add these Vercel environment variables, redeploy, then this button will open the real Google account consent screen.
-                  </p>
-                  <div className="mt-3 grid gap-2 font-mono text-xs text-white/76 sm:grid-cols-2">
-                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">AUTH_SECRET</span>
-                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">YOUTUBE_CLIENT_ID</span>
-                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">YOUTUBE_CLIENT_SECRET</span>
-                    <span className="rounded-md border border-line bg-black/35 px-2 py-2">Redirect: /api/auth/youtube/callback</span>
-                  </div>
-                  <p className="mt-3 leading-6 text-white/62">
-                    Without those keys, Google OAuth cannot verify YouTube ownership automatically. The proof-code flow below still works for worldwide creator verification.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm text-white/62" htmlFor="displayName">
                 Creator name
@@ -324,11 +190,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
             <div className="rounded-lg border border-line bg-black/25 p-4">
               <p className="text-sm font-semibold text-white">Ownership proof code</p>
-              <p className="mt-2 text-sm leading-6 text-white/58">
-                {hasOAuthConnection
-                  ? "Already satisfied by the connected YouTube account. Manual proof is only needed when OAuth is unavailable."
-                  : platformProofGuidance[selectedPlatform]}
-              </p>
+              <p className="mt-2 text-sm leading-6 text-white/58">{platformProofGuidance[selectedPlatform]}</p>
               <div className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 font-mono text-sm text-ember">{creatorProofCode(profile.handle)}</div>
               <label className="mt-4 block text-sm text-white/62" htmlFor="proofLocationUrl">
                 Public URL where the proof code is visible
@@ -342,8 +204,8 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
                 />
               </label>
               <label className="mt-4 flex items-start gap-3 text-sm leading-6 text-white/68">
-                <input name="proofConfirmed" type="checkbox" defaultChecked={hasOAuthConnection || profile.verificationChecks.proofCode} disabled={hasOAuthConnection} className="mt-1 size-4 accent-[#ff7a1a]" />
-                {hasOAuthConnection ? "Ownership confirmed by OAuth connection." : "I added the proof code to my public channel/profile so ChatBoost can confirm ownership."}
+                <input name="proofConfirmed" type="checkbox" defaultChecked={profile.verificationChecks.proofCode} className="mt-1 size-4 accent-[#ff7a1a]" />
+                I added the proof code to my public channel/profile so ChatBoost can confirm ownership.
               </label>
             </div>
 
@@ -374,7 +236,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
         <aside className="space-y-4">
           {[
-            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? (hasOAuthConnection ? "Verified by connected platform account" : "Ready for admin proof-code review") : "Add a public proof-code URL for any supported creator platform"],
+            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? "Ready for admin proof-code review" : "Add a public proof-code URL for any supported creator platform"],
             [IdCard, "Identity", profile.verificationChecks.identity ? "Legal creator name captured" : "Needed before payouts"],
             [WalletCards, "Payout readiness", profile.verificationChecks.payout ? "Country captured for provider routing" : "Needed for tax and payout checks"],
             [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for admin approval" : "Locked until all checks pass and admin approves"]

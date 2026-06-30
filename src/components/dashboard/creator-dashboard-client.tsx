@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Clock3, Copy, Download, ExternalLink, RadioTower, RotateCcw, ShieldCheck, Share2, UserRound, WandSparkles } from "lucide-react";
+import { AlertTriangle, Check, Clock3, Copy, Download, ExternalLink, RadioTower, ShieldCheck, Share2, UserRound, WandSparkles } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { Metric } from "@/components/ui/metric";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { creatorStats, topSupporters } from "@/lib/data/demo";
-import { clearDemoBoosts, sumBoosts, useLiveBoosts } from "@/lib/client/live-boosts";
+import { sumBoosts, useLiveBoosts } from "@/lib/client/live-boosts";
 import { creatorPaymentPath } from "@/lib/creator";
 import { creatorShareUrl, fallbackCreatorProfile, readCreatorProfile, saveCreatorProfile, type CreatorProfile } from "@/lib/client/creator-profile";
 import { normalizePlatform } from "@/lib/creator-verification";
@@ -76,7 +76,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
             ) : (
               <p className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-lg border border-ember/25 bg-ember/10 px-3 py-2 text-sm text-ember">
                 <AlertTriangle size={15} />
-                No real platform account connected yet. Connect YouTube to prove this creator owns the channel.
+                No channel proof has been approved yet. Submit public proof so this account can be reviewed.
               </p>
             )}
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/58">
@@ -109,11 +109,11 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
                     ? "Payment link locked while admin reviews your creator proof."
                     : connectedAccount
                       ? "Platform account connected. Finish identity and payout review to unlock the payment link."
-                      : "Payment link locked until a real creator platform account is connected and reviewed."}
+                      : "Payment link locked until channel proof is submitted and reviewed."}
                 </p>
                 <ButtonLink href="/creator/verification">
                   <ShieldCheck size={17} />
-                  {isInReview ? "View review status" : connectedAccount ? "Finish verification" : "Connect creator platform"}
+                  {isInReview ? "View review status" : connectedAccount ? "Finish verification" : "Verify creator"}
                 </ButtonLink>
               </div>
             )}
@@ -134,7 +134,7 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
               <p className="text-sm text-ember">Live activity</p>
               <h2 className="mt-1 text-2xl font-semibold">Paid messages</h2>
             </div>
-            <ButtonLink href="/overlay/demo-creator" variant="secondary">
+            <ButtonLink href={`/overlay/${creatorProfile.handle}`} variant="secondary">
               <RadioTower size={17} />
               Preview overlay
             </ButtonLink>
@@ -194,10 +194,6 @@ export function CreatorDashboardClient({ initialProfile }: { initialProfile?: In
           <WandSparkles size={17} />
           Moderation settings
         </ButtonLink>
-        <Button type="button" variant="secondary" onClick={clearDemoBoosts}>
-          <RotateCcw size={17} />
-          Reset demo activity
-        </Button>
       </div>
     </AppShell>
   );

@@ -2,7 +2,7 @@
 
 ## Phase 1 - Foundation
 
-- Next.js product surface, public creator pages, OBS overlay preview, creator dashboard, viewer dashboard, admin panel.
+- Next.js product surface, public creator pages, OBS overlay preview, creator dashboard, and admin panel.
 - Prisma schema for the complete core domain.
 - Payment adapter interface with Stripe, Razorpay, PayPal, and UPI stubs.
 - Streaming adapter interface with YouTube first and future platform placeholders.

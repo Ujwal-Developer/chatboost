@@ -1,15 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Activity, BadgeDollarSign, Bell, LayoutDashboard, Settings, Shield, ShieldCheck } from "lucide-react";
+import { Bell, LayoutDashboard, Settings, ShieldCheck } from "lucide-react";
 import { BrandLink } from "@/components/brand/brand-logo";
 import { CreatorAccountStatus } from "@/components/dashboard/creator-account-status";
 
 const nav = [
   { href: "/dashboard/creator", label: "Creator", icon: LayoutDashboard },
-  { href: "/creator/verification", label: "Verification", icon: ShieldCheck },
-  { href: "/overlay/demo-creator", label: "Overlay", icon: Activity },
-  { href: "/admin", label: "Admin", icon: Shield },
-  { href: "/@nova", label: "Public page", icon: BadgeDollarSign }
+  { href: "/creator/verification", label: "Verification", icon: ShieldCheck }
 ];
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {

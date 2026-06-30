@@ -44,7 +44,7 @@ export function CreatorVerificationAdmin() {
             </p>
             <h2 className="mt-2 text-2xl font-semibold">Review ownership proof before payments unlock</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
-              Confirm the creator added the proof code to their public channel/profile, then approve the request. This demo queue uses browser storage; production should store reviews in the database with admin audit logs.
+              Confirm the creator added the proof code to their public channel/profile, then approve the request. This review queue currently uses browser storage; production should store reviews in the database with admin audit logs.
             </p>
           </div>
           <span className="rounded-lg border border-line bg-black/30 px-3 py-2 text-sm text-white/62">{pendingRequests.length} pending</span>

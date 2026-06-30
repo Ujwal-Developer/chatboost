@@ -25,6 +25,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastBoost, setLastBoost] = useState<LiveBoost | null>(null);
+  const [lastPaymentMode, setLastPaymentMode] = useState<"sandbox" | "live">("sandbox");
   const currency = provider === "razorpay" ? "INR" : "USD";
   const amountMajor = amount / 100;
 
@@ -78,6 +79,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
 
       addLiveBoost(boost);
       setLastBoost(boost);
+      setLastPaymentMode(payload.mode === "live" ? "live" : "sandbox");
       setStatus("success");
     } catch (caught) {
       setStatus("error");
@@ -158,7 +160,11 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-            <p>{lastBoost.amountLabel} tip sent. Thanks for supporting {creatorName}.</p>
+            <p>
+              {lastPaymentMode === "live"
+                ? `${lastBoost.amountLabel} tip sent. Thanks for supporting ${creatorName}.`
+                : `${lastBoost.amountLabel} preview tip saved. Real checkout will go live after payment provider setup.`}
+            </p>
           </div>
         </div>
       ) : null}

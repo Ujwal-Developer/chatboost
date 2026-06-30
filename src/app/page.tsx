@@ -116,7 +116,7 @@ export default function LandingPage() {
                 <ArrowRight size={18} />
               </ButtonLink>
               <ButtonLink href="/@nova" variant="secondary">
-                Send a test boost
+                Preview payment page
               </ButtonLink>
             </div>
             <div className="mt-4 rounded-lg border border-white/12 bg-white/[0.06] p-4 text-sm text-white/66">
@@ -126,7 +126,7 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="mt-8 grid gap-3 text-sm text-white/62 sm:grid-cols-3">
-              {["10% platform fee", "Stripe + Razorpay ready", "OBS browser source"].map((item) => (
+              {["10% platform fee", "Stripe and Razorpay adapters", "OBS browser source"].map((item) => (
                 <span key={item} className="inline-flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-mint" />
                   {item}

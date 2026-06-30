@@ -1,5 +1,10 @@
 # Production Launch Checklist
 
+## Current Status
+
+- Product demo and creator payment-link flow are ready for review.
+- Real-money public launch is blocked until production payment checkout/webhooks, persistent database storage, admin access control, and payout/KYC workflows are connected.
+
 ## Product
 
 - Creator onboarding flow is complete.

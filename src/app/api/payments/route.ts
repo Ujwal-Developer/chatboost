@@ -53,11 +53,12 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({
+    mode: "sandbox",
     intent,
     payment: {
       id: `pay_${idempotencyKey}`,
       idempotencyKey,
-      status: "SUCCEEDED",
+      status: "SANDBOX_SUCCEEDED",
       provider,
       fees,
       moderation

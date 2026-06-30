@@ -103,7 +103,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
       <label className="mt-4 block text-sm text-white/68" htmlFor="message">
         Message
       </label>
-      <textarea id="message" name="message" required maxLength={240} className="mt-2 min-h-28 w-full resize-none rounded-lg border border-line bg-black/35 p-3 text-white outline-none focus-visible:focus-ring" defaultValue="This stream deserves a boost. Keep going!" />
+      <textarea id="message" name="message" required maxLength={240} className="mt-2 min-h-28 w-full resize-none rounded-lg border border-line bg-black/35 p-3 text-white outline-none focus-visible:focus-ring" defaultValue="Keep creating. This tip is for you!" />
 
       <label className="mt-4 block text-sm text-white/68" htmlFor="amount">
         Amount
@@ -158,7 +158,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-            <p>{lastBoost.amountLabel} tip sent. It is now visible in recent tips, dashboard, and overlay.</p>
+            <p>{lastBoost.amountLabel} tip sent. The creator can see it in their dashboard and overlay.</p>
           </div>
         </div>
       ) : null}

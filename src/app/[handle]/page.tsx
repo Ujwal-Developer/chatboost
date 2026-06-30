@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, RadioTower } from "lucide-react";
 import { BrandLink } from "@/components/brand/brand-logo";
 import { PaymentPanel } from "@/components/creator/payment-panel";
-import { RecentBoosts } from "@/components/creator/recent-boosts";
 import { creatorPaymentPath, displayNameFromHandle, normalizeCreatorHandle } from "@/lib/creator";
 
 export default async function CreatorPublicPage({ params }: { params: Promise<{ handle: string }> }) {
@@ -50,11 +49,6 @@ export default async function CreatorPublicPage({ params }: { params: Promise<{ 
                 </div>
                 <p className="mt-2 text-white/66">Successful tips appear in the creator dashboard and overlay feed.</p>
               </div>
-            </section>
-
-            <section className="rounded-lg border border-line bg-white/[0.06] p-6">
-              <h2 className="text-xl font-semibold">Recent tips</h2>
-              <RecentBoosts />
             </section>
           </div>
         </section>

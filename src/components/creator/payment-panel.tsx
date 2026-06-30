@@ -158,7 +158,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-            <p>{lastBoost.amountLabel} tip sent. The creator can see it in their dashboard and overlay.</p>
+            <p>{lastBoost.amountLabel} tip sent. Thanks for supporting {creatorName}.</p>
           </div>
         </div>
       ) : null}

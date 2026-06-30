@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BadgeCheck, RadioTower } from "lucide-react";
+import { BadgeCheck, Heart } from "lucide-react";
 import { BrandLink } from "@/components/brand/brand-logo";
 import { PaymentPanel } from "@/components/creator/payment-panel";
 import { creatorPaymentPath, displayNameFromHandle, normalizeCreatorHandle } from "@/lib/creator";
@@ -44,10 +44,10 @@ export default async function CreatorPublicPage({ params }: { params: Promise<{ 
               </p>
               <div className="mt-5 rounded-lg border border-ember/25 bg-ember/10 p-4 text-sm leading-6 text-ember">
                 <div className="flex items-center gap-2 font-semibold">
-                  <RadioTower size={17} />
-                  Live payment alert
+                  <Heart size={17} />
+                  Support the creator
                 </div>
-                <p className="mt-2 text-white/66">Successful tips appear in the creator dashboard and overlay feed.</p>
+                <p className="mt-2 text-white/66">Your name and message are sent with the tip so the creator knows who supported them.</p>
               </div>
             </section>
           </div>

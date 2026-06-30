@@ -99,8 +99,8 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
     <form className="surface rounded-lg p-5" onSubmit={handleSubmit} data-testid="payment-form">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-ember">Pay {creatorHandle}</p>
-          <h2 className="mt-1 text-2xl font-semibold">Send a boost to {creatorName}</h2>
+          <p className="text-sm font-medium text-ember">Tip {creatorHandle}</p>
+          <h2 className="mt-1 text-2xl font-semibold">Pay or tip {creatorName}</h2>
         </div>
         <Sparkles className="text-ember" size={24} />
       </div>
@@ -179,7 +179,7 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
         <div className="mt-5 rounded-lg border border-mint/30 bg-mint/10 p-4 text-sm text-mint" data-testid="payment-success">
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
-            <p>{lastBoost.amountLabel} boost sent. It is now visible in recent boosts, dashboard, and overlay.</p>
+            <p>{lastBoost.amountLabel} tip sent. It is now visible in recent tips, dashboard, and overlay.</p>
           </div>
         </div>
       ) : null}
@@ -192,10 +192,10 @@ export function PaymentPanel({ creatorId = "demo-creator", creatorName = "Nova P
 
       <Button className="mt-5 w-full" type="submit" disabled={status === "submitting"}>
         {status === "submitting" ? <Loader2 className="animate-spin" size={18} /> : <CreditCard size={18} />}
-        {status === "submitting" ? "Processing payment" : "Pay and send instantly"}
+        {status === "submitting" ? "Processing payment" : "Pay / tip now"}
       </Button>
       <p className="mt-3 text-center text-xs text-white/45">
-        Viewers do not need an account. This shared creator link sends the payment and message straight to the stream.
+        Viewers do not need an account. This shared creator link sends the payment and message straight to the creator.
       </p>
     </form>
   );

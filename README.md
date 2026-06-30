@@ -53,6 +53,18 @@ The authentication model matches Nightbot-style platform verification:
 
 Manual proof codes remain available as a fallback when a provider OAuth integration is not configured yet.
 
+## Worldwide Channel Verification
+
+ChatBoost's primary channel-verification path is platform-neutral and does not depend on Google Cloud billing:
+
+1. Creator submits their official channel/profile URL.
+2. ChatBoost generates a unique proof code such as `CHATBOOST-HANDLE`.
+3. Creator places that code in a public bio, about section, pinned post, channel panel, or linked website.
+4. Creator pastes the exact public proof URL into the verification form.
+5. Admin opens the channel and proof URL, confirms the code is visible, and approves or rejects the creator.
+
+This works for YouTube, Twitch, Kick, Instagram, TikTok, creator websites, and other public creator profiles. Provider OAuth can still be added later as a faster verification shortcut.
+
 ## Important Directories
 
 - `src/app`: routes and API handlers.

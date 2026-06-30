@@ -19,6 +19,7 @@ export type CreatorProfile = {
   channelUrl: string;
   channelHandle: string;
   proofCode: string;
+  proofLocationUrl: string;
   legalName: string;
   payoutCountry: string;
   verificationStatus: CreatorVerificationStatus;
@@ -50,6 +51,7 @@ export const fallbackCreatorProfile: CreatorProfile = {
   channelUrl: "https://youtube.com/@nova",
   channelHandle: "@nova",
   proofCode: creatorProofCode(defaultCreatorHandle),
+  proofLocationUrl: "https://youtube.com/@nova/about",
   legalName: "",
   payoutCountry: "US",
   verificationStatus: "not_started",
@@ -112,6 +114,7 @@ export function saveCreatorProfile(
     channelUrl: profile.channelUrl?.trim() ?? current.channelUrl,
     channelHandle: profile.channelHandle?.trim() ?? current.channelHandle,
     proofCode: profile.proofCode ?? creatorProofCode(handle),
+    proofLocationUrl: profile.proofLocationUrl?.trim() ?? current.proofLocationUrl,
     legalName: profile.legalName?.trim() ?? current.legalName,
     payoutCountry: profile.payoutCountry?.trim().toUpperCase() ?? current.payoutCountry,
     verificationStatus: profile.verificationStatus ?? current.verificationStatus,
@@ -169,6 +172,14 @@ export function updateManualReviewRequest(handle: string, status: "verified" | "
   const request = queue.find((item) => item.handle === handle);
   const current = readCreatorProfile();
   const baseProfile = request ?? current;
+  const manualAccount: ConnectedPlatformAccount = {
+    provider: baseProfile.platform,
+    displayName: baseProfile.displayName,
+    handle: baseProfile.channelHandle || `@${baseProfile.handle}`,
+    url: baseProfile.channelUrl,
+    verificationSource: "manual",
+    connectedAt: reviewedAt
+  };
   const next = saveCreatorProfile({
     ...baseProfile,
     verificationStatus: status,
@@ -181,7 +192,11 @@ export function updateManualReviewRequest(handle: string, status: "verified" | "
             identity: true,
             payout: true
           }
-        : baseProfile.verificationChecks
+        : baseProfile.verificationChecks,
+    connectedAccounts:
+      status === "verified"
+        ? [manualAccount, ...baseProfile.connectedAccounts.filter((account) => !(account.provider === manualAccount.provider && account.verificationSource === "manual"))]
+        : baseProfile.connectedAccounts
   });
 
   window.localStorage.setItem(

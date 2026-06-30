@@ -11,7 +11,9 @@ import {
   creatorProofCode,
   emptyVerificationChecks,
   isLikelyChannelUrl,
+  normalizePlatform,
   platformLabels,
+  platformProofGuidance,
   verificationProgress
 } from "@/lib/creator-verification";
 
@@ -61,6 +63,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
   const [profile, setProfile] = useState<CreatorProfile>(fallbackCreatorProfile);
   const [statusMessage, setStatusMessage] = useState("");
   const [authMode, setAuthMode] = useState<"checking" | "real" | "demo">("checking");
+  const [selectedPlatform, setSelectedPlatform] = useState(profile.platform);
   const progress = verificationProgress(profile.verificationChecks);
   const shareUrl = useMemo(() => creatorShareUrl(profile), [profile]);
   const isVerified = profile.verificationStatus === "verified";
@@ -71,6 +74,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
   useEffect(() => {
     const next = profileFromInitial(initialProfile);
     setProfile(saveCreatorProfile(next));
+    setSelectedPlatform(next.platform);
   }, [initialProfile]);
 
   useEffect(() => {
@@ -127,6 +131,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             connectedAccounts
           });
           setProfile(next);
+          setSelectedPlatform(next.platform);
           setStatusMessage("Real YouTube channel connected. ChatBoost now knows which channel this creator owns.");
         }
       } catch {
@@ -146,15 +151,17 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     const data = new FormData(event.currentTarget);
     const handle = normalizeCreatorHandle(String(data.get("handle") ?? profile.handle));
     const channelUrl = String(data.get("channelUrl") ?? "").trim();
+    const proofLocationUrl = String(data.get("proofLocationUrl") ?? "").trim();
     const legalName = String(data.get("legalName") ?? "").trim();
     const payoutCountry = String(data.get("payoutCountry") ?? "").trim().toUpperCase();
     const proofConfirmed = hasOAuthConnection || data.get("proofConfirmed") === "on";
     const channelOwned = hasOAuthConnection || isLikelyChannelUrl(channelUrl);
+    const proofVisible = hasOAuthConnection || (proofConfirmed && isLikelyChannelUrl(proofLocationUrl));
 
     const verificationChecks = {
       email: String(data.get("email") ?? "").includes("@"),
       channel: channelOwned,
-      proofCode: proofConfirmed,
+      proofCode: proofVisible,
       identity: legalName.length >= 2,
       payout: payoutCountry.length === 2
     };
@@ -167,6 +174,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
       platform: String(data.get("platform") ?? profile.platform),
       channelUrl,
       channelHandle: String(data.get("channelHandle") ?? ""),
+      proofLocationUrl,
       legalName,
       payoutCountry,
       proofCode: creatorProofCode(handle),
@@ -183,7 +191,9 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
     setStatusMessage(
       checksComplete
         ? "Verification submitted for admin review. The payment link unlocks after approval."
-        : "Verification saved. Complete every check before submitting for admin review."
+        : proofVisible && channelOwned
+          ? "Channel proof saved. Complete identity and payout fields when you are ready to unlock payments."
+          : "Verification saved. Add the proof code to a public page and paste the proof location URL."
     );
   }
 
@@ -199,7 +209,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </p>
               <h2 className="mt-2 text-3xl font-semibold">Verify this is your real channel</h2>
               <p className="mt-3 max-w-2xl leading-7 text-white/62">
-                ChatBoost should only activate payments after channel ownership, identity, payout readiness, and admin approval are complete.
+                Worldwide creators can verify ownership by placing a unique ChatBoost code on their public channel, profile, or linked website.
               </p>
             </div>
             <span className={`rounded-lg border px-3 py-2 text-sm font-semibold ${isVerified ? "border-mint/35 bg-mint/10 text-mint" : "border-ember/35 bg-ember/10 text-ember"}`}>
@@ -214,16 +224,28 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
             data-testid="creator-verification-form"
           >
             <div className="rounded-lg border border-line bg-black/25 p-4">
+              <p className="text-sm font-semibold text-white">Universal channel proof</p>
+              <p className="mt-2 text-sm leading-6 text-white/58">
+                Works for YouTube, Twitch, Kick, Instagram, TikTok, a website, or any public creator profile. Admins verify the code before the payment link can unlock.
+              </p>
+              <ol className="mt-4 grid gap-2 text-sm leading-6 text-white/68">
+                <li className="rounded-lg border border-line bg-black/24 px-3 py-2">1. Paste your official channel/profile URL below.</li>
+                <li className="rounded-lg border border-line bg-black/24 px-3 py-2">2. Put the ChatBoost proof code in a public bio, about section, pinned post, panel, or linked website.</li>
+                <li className="rounded-lg border border-line bg-black/24 px-3 py-2">3. Paste the exact public URL where the code can be checked.</li>
+              </ol>
+            </div>
+
+            <div className="rounded-lg border border-line bg-black/25 p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
-                  <p className="text-sm font-semibold text-white">Real account connection</p>
+                  <p className="text-sm font-semibold text-white">Optional YouTube OAuth shortcut</p>
                   <p className="mt-1 text-sm leading-6 text-white/58">
                     {hasOAuthConnection
                       ? "Connected by Google OAuth. This replaces manual channel proof for ownership."
                       : authMode === "real"
                         ? "Connect the creator's real YouTube account. ChatBoost will read the channel owned by that Google account."
                         : authMode === "demo"
-                          ? "YouTube OAuth is not fully configured yet. Add the Vercel environment variables below to test with a real account."
+                          ? "Google OAuth is optional. Use the universal proof-code flow below for worldwide creators without Google Cloud billing."
                           : "Checking real authentication configuration..."}
                   </p>
                 </div>
@@ -250,7 +272,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
                     <span className="rounded-md border border-line bg-black/35 px-2 py-2">Redirect: /api/auth/youtube/callback</span>
                   </div>
                   <p className="mt-3 leading-6 text-white/62">
-                    Without those keys, no app can verify YouTube ownership through Google. Use the manual proof code below until real OAuth keys are added.
+                    Without those keys, Google OAuth cannot verify YouTube ownership automatically. The proof-code flow below still works for worldwide creator verification.
                   </p>
                 </div>
               ) : null}
@@ -274,7 +296,13 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               </label>
               <label className="block text-sm text-white/62" htmlFor="platform">
                 Platform
-                <select id="platform" name="platform" defaultValue={profile.platform} className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring">
+                <select
+                  id="platform"
+                  name="platform"
+                  defaultValue={profile.platform}
+                  onChange={(event) => setSelectedPlatform(normalizePlatform(event.currentTarget.value))}
+                  className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
+                >
                   {creatorPlatforms.map((platform) => (
                     <option key={platform} value={platform} className="bg-black">
                       {platformLabels[platform]}
@@ -299,9 +327,20 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
               <p className="mt-2 text-sm leading-6 text-white/58">
                 {hasOAuthConnection
                   ? "Already satisfied by the connected YouTube account. Manual proof is only needed when OAuth is unavailable."
-                  : "Add this code to the channel bio, about section, pinned post, or website page, then confirm it below."}
+                  : platformProofGuidance[selectedPlatform]}
               </p>
               <div className="mt-3 rounded-lg border border-ember/30 bg-ember/10 p-3 font-mono text-sm text-ember">{creatorProofCode(profile.handle)}</div>
+              <label className="mt-4 block text-sm text-white/62" htmlFor="proofLocationUrl">
+                Public URL where the proof code is visible
+                <input
+                  id="proofLocationUrl"
+                  name="proofLocationUrl"
+                  type="url"
+                  required
+                  defaultValue={profile.proofLocationUrl || profile.channelUrl}
+                  className="mt-2 h-12 w-full rounded-lg border border-line bg-black/35 px-3 text-white outline-none focus-visible:focus-ring"
+                />
+              </label>
               <label className="mt-4 flex items-start gap-3 text-sm leading-6 text-white/68">
                 <input name="proofConfirmed" type="checkbox" defaultChecked={hasOAuthConnection || profile.verificationChecks.proofCode} disabled={hasOAuthConnection} className="mt-1 size-4 accent-[#ff7a1a]" />
                 {hasOAuthConnection ? "Ownership confirmed by OAuth connection." : "I added the proof code to my public channel/profile so ChatBoost can confirm ownership."}
@@ -335,7 +374,7 @@ export function CreatorVerificationClient({ initialProfile }: { initialProfile?:
 
         <aside className="space-y-4">
           {[
-            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? (hasOAuthConnection ? "Verified by connected platform account" : "Verified by URL and public proof code") : "Connect a platform account or add a public proof code"],
+            [LinkIcon, "Channel ownership", profile.verificationChecks.channel && profile.verificationChecks.proofCode ? (hasOAuthConnection ? "Verified by connected platform account" : "Ready for admin proof-code review") : "Add a public proof-code URL for any supported creator platform"],
             [IdCard, "Identity", profile.verificationChecks.identity ? "Legal creator name captured" : "Needed before payouts"],
             [WalletCards, "Payout readiness", profile.verificationChecks.payout ? "Country captured for provider routing" : "Needed for tax and payout checks"],
             [CheckCircle2, "Payment link", isVerified ? shareUrl : isInReview ? "Waiting for admin approval" : "Locked until all checks pass and admin approves"]

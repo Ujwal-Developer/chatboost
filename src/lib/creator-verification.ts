@@ -32,6 +32,16 @@ export const platformLabels: Record<CreatorPlatform, string> = {
   other: "Other platform"
 };
 
+export const platformProofGuidance: Record<CreatorPlatform, string> = {
+  youtube: "Put the code in the channel About section, a community post, or a pinned video comment.",
+  twitch: "Put the code in the channel bio, About panel, or a public schedule/panel link.",
+  kick: "Put the code in the channel bio or another public profile section.",
+  instagram: "Put the code in the profile bio, public story highlight, or a linked public page.",
+  tiktok: "Put the code in the profile bio or a public pinned video caption/comment.",
+  website: "Put the code on a public page under your domain, then paste that page URL.",
+  other: "Put the code somewhere publicly visible on the official creator profile or linked website."
+};
+
 export function normalizePlatform(input?: string): CreatorPlatform {
   return creatorPlatforms.includes(input as CreatorPlatform) ? (input as CreatorPlatform) : "youtube";
 }

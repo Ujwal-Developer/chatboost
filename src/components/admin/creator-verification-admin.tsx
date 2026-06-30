@@ -84,11 +84,17 @@ export function CreatorVerificationAdmin() {
                 <div className="mt-4 rounded-lg border border-line bg-black/24 p-4">
                   <p className="text-sm text-white/38">Proof code to check publicly</p>
                   <p className="mt-2 font-mono text-sm text-ember">{request.proofCode}</p>
+                  <p className="mt-3 text-sm text-white/38">Proof location</p>
+                  <p className="mt-1 break-words text-sm text-white/64">{request.proofLocationUrl || request.channelUrl}</p>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <ButtonLink href={request.channelUrl} variant="secondary">
                     <ExternalLink size={17} />
                     Open channel
+                  </ButtonLink>
+                  <ButtonLink href={request.proofLocationUrl || request.channelUrl} variant="secondary">
+                    <ExternalLink size={17} />
+                    Open proof URL
                   </ButtonLink>
                   <ButtonLink href={creatorPaymentPath(request.handle)} variant="secondary">
                     Preview payment page
